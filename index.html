@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kisuco Travel Planner - Gestão de Viagens & Mapa de Conquistas</title>
+  <title>Kisuco Planner - Gestão de Viagens & Mapa de Conquistas</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -110,7 +110,7 @@
             <i class="fa-solid fa-compass"></i>
           </div>
           <div>
-            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-teal-100 to-teal-400 bg-clip-text text-transparent">Kisuco Travel Planner</span>
+            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-teal-100 to-teal-400 bg-clip-text text-transparent">Kisuco Planner</span>
             <span class="hidden sm:inline-block text-xs uppercase px-2 py-0.5 rounded-full bg-teal-950/80 text-teal-300 font-bold border border-teal-800/60 ml-2">Travel Suite</span>
           </div>
         </div>
@@ -701,13 +701,13 @@
 
     <section id="tab-about" class="tab-content hidden space-y-6">
       <div class="bg-gradient-to-r from-navy-900 via-slate-900 to-teal-950 text-white rounded-2xl p-7 sm:p-9 shadow-sm">
-        <div class="flex items-center gap-4"><div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 text-2xl shadow-lg"><i class="fa-solid fa-compass"></i></div><div><p class="text-xs uppercase tracking-widest text-teal-300 font-bold">Sobre o aplicativo</p><h2 class="text-2xl sm:text-3xl font-black">Kisuco Travel Planner</h2><p class="text-sm text-slate-300 mt-1">Gestão de viagens, roteiros e conquistas pelo mundo.</p></div></div>
+        <div class="flex items-center gap-4"><div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 text-2xl shadow-lg"><i class="fa-solid fa-compass"></i></div><div><p class="text-xs uppercase tracking-widest text-teal-300 font-bold">Sobre o aplicativo</p><h2 class="text-2xl sm:text-3xl font-black">Kisuco Planner</h2><p class="text-sm text-slate-300 mt-1">Gestão de viagens, roteiros e conquistas pelo mundo.</p></div></div>
         <div class="mt-6 inline-flex items-center gap-2 rounded-full bg-teal-400/10 border border-teal-300/30 px-4 py-2 text-sm font-bold text-teal-200"><i class="fa-solid fa-code-branch"></i> Versão 1.03</div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-list-check text-teal-600 mr-2"></i>Funcionalidades</h3><ul class="space-y-2 text-sm text-slate-600"><li>• Dashboard com visão geral das viagens</li><li>• Cadastro e acompanhamento de viagens</li><li>• Cronograma diário e roteiro de atividades</li><li>• Checklist de bagagem e preparativos</li><li>• Orçamento, gastos e despesas</li><li>• Anexos e documentos de viagem</li><li>• Mapas de conquistas do Brasil e do mundo (Você, Esposa e Ambos)</li></ul></div>
         <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-database text-teal-600 mr-2"></i>Armazenamento de dados</h3><p class="text-sm text-slate-600 leading-relaxed">Os dados principais são sincronizados via API segura (<code class="text-teal-700">/api/db</code>) no arquivo <code class="text-teal-700">djc_travel_planner_bd.json</code> em repositório privado no GitHub, com cache local no navegador. Os anexos utilizam armazenamento IndexedDB do navegador.</p><p class="text-xs text-slate-400 mt-3">Recomenda-se exportar backups regularmente. O armazenamento local de anexos depende do navegador e da origem utilizada para abrir o aplicativo.</p></div>
-        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm md:col-span-2"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-map text-teal-600 mr-2"></i>Informações cartográficas</h3><p class="text-sm text-slate-600 leading-relaxed">Os mapas do Brasil e do mundo são desenhados com polígonos vetoriais GeoJSON, sem depender de imagens de blocos (tiles). Os limites estaduais brasileiros são derivados da malha territorial do IBGE; os contornos dos países são carregados de uma base GeoJSON pública. A biblioteca Leaflet fornece zoom e navegação. É necessária conexão com a internet para carregar a biblioteca e os dados geográficos.</p><p class="text-xs text-slate-400 mt-3">Kisuco Travel Planner · Versão interna 1.03</p></div>
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm md:col-span-2"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-map text-teal-600 mr-2"></i>Informações cartográficas</h3><p class="text-sm text-slate-600 leading-relaxed">Os mapas do Brasil e do mundo são desenhados com polígonos vetoriais GeoJSON, sem depender de imagens de blocos (tiles). Os limites estaduais brasileiros são derivados da malha territorial do IBGE; os contornos dos países são carregados de uma base GeoJSON pública. A biblioteca Leaflet fornece zoom e navegação. É necessária conexão com a internet para carregar a biblioteca e os dados geográficos.</p><p class="text-xs text-slate-400 mt-3">Kisuco Planner · Versão interna 1.03</p></div>
       </div>
     </section>
   </main>
@@ -1297,7 +1297,7 @@
      * APPLICATION STATE & EXTERNAL DATABASE (djc_travel_planner_bd.json)
      * ------------------------------------------------------------- */
     const APP_VERSION = '1.03';
-    const APP_NAME = 'Kisuco Travel Planner';
+    const APP_NAME = 'Kisuco Planner';
     const EXTERNAL_DB_FILE = 'djc_travel_planner_bd.json';
     const STORAGE_KEY = 'djc_travel_planner_bd_v1';
 
@@ -3178,7 +3178,7 @@
         ${activitiesByDayHtml}
 
         <div style="margin-top:30px; font-size:11px; color:#94a3b8; text-align:center;">
-          Gerado pelo aplicativo Kisuco Travel Planner
+          Gerado pelo aplicativo Kisuco Planner
         </div>
       `;
 
@@ -4189,7 +4189,7 @@
         try {
           const obj = JSON.parse(e.target.result);
           if (obj && ['viatura-backup','kisuco-travel-planner-backup'].includes(obj.app) && obj.state && Array.isArray(obj.state.trips)) await restoreFullBackup(obj);
-          else showToast('Este não é um backup completo do Kisuco Travel Planner.', 'error');
+          else showToast('Este não é um backup completo do Kisuco Planner.', 'error');
         } catch (_) {
           showToast('Erro ao ler o arquivo de backup.', 'error');
         }
