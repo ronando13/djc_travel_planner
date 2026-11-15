@@ -706,7 +706,7 @@
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-list-check text-teal-600 mr-2"></i>Funcionalidades</h3><ul class="space-y-2 text-sm text-slate-600"><li>• Dashboard com visão geral das viagens</li><li>• Cadastro e acompanhamento de viagens</li><li>• Cronograma diário e roteiro de atividades</li><li>• Checklist de bagagem e preparativos</li><li>• Orçamento, gastos e despesas</li><li>• Anexos e documentos de viagem</li><li>• Mapas de conquistas do Brasil e do mundo (Você, Esposa e Ambos)</li></ul></div>
-        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-database text-teal-600 mr-2"></i>Armazenamento de dados</h3><p class="text-sm text-slate-600 leading-relaxed">Os dados principais são sincronizados via API segura (<code class="text-teal-700">/api/db</code>) no arquivo <code class="text-teal-700">djc_travel_planner_bd.json</code> em repositório privado no GitHub, com cache local no navegador. Os anexos utilizam armazenamento IndexedDB do navegador.</p><p class="text-xs text-slate-400 mt-3">Recomenda-se exportar backups regularmente. O armazenamento local de anexos depende do navegador e da origem utilizada para abrir o aplicativo.</p></div>
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-database text-teal-600 mr-2"></i>Armazenamento de dados</h3><p class="text-sm text-slate-600 leading-relaxed">Os dados principais e os anexos (pasta <code class="text-teal-700">anexos/</code>) são sincronizados automaticamente via API segura (<code class="text-teal-700">/api/db</code>) no seu repositório privado no GitHub, com cache rápido IndexedDB no navegador para acesso imediato em qualquer dispositivo.</p><p class="text-xs text-slate-400 mt-3">Recomenda-se exportar backups regularmente. O armazenamento local de anexos depende do navegador e da origem utilizada para abrir o aplicativo.</p></div>
         <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm md:col-span-2"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-map text-teal-600 mr-2"></i>Informações cartográficas</h3><p class="text-sm text-slate-600 leading-relaxed">Os mapas do Brasil e do mundo são desenhados com polígonos vetoriais GeoJSON, sem depender de imagens de blocos (tiles). Os limites estaduais brasileiros são derivados da malha territorial do IBGE; os contornos dos países são carregados de uma base GeoJSON pública. A biblioteca Leaflet fornece zoom e navegação. É necessária conexão com a internet para carregar a biblioteca e os dados geográficos.</p><p class="text-xs text-slate-400 mt-3">Kisuco Planner · Versão interna 1.03</p></div>
       </div>
     </section>
@@ -1011,7 +1011,7 @@
           <label ondragover="event.preventDefault()" ondrop="onAttModalDrop(event)" class="flex flex-col items-center justify-center text-center gap-1 border-2 border-dashed border-slate-300 hover:border-teal-500 hover:bg-teal-50/40 rounded-xl p-5 cursor-pointer transition">
             <i class="fa-solid fa-cloud-arrow-up text-2xl text-teal-600"></i>
             <span class="font-semibold text-slate-700">Escolher arquivos ou arrastar até aqui</span>
-            <span class="text-[11px] text-slate-400">Fotos, PDFs e documentos (até 40 MB cada)</span>
+            <span class="text-[11px] text-slate-400">Fotos, PDFs e documentos (até 3,2 MB cada — sincronizado na nuvem)</span>
             <input type="file" id="attFileInput" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" class="hidden" onchange="onAttFilesPicked(event)" />
           </label>
           <label class="md:hidden mt-2 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl py-2.5 cursor-pointer transition">
@@ -2118,7 +2118,7 @@
             endDate,
             type,
             status,
-            coverImage: resolveEditedCover(state.trips[index].coverImage, coverImage)
+            coverImage: resolveEditedCover(state.trips[index].coverImage, coverImage, state.trips[index].coverCloudPath)
           };
           showToast('Viagem atualizada com sucesso!');
         }
@@ -3276,7 +3276,7 @@
      * ANEXOS & INDEXEDDB
      * ------------------------------------------------------------- */
     const DEFAULT_COVER = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80';
-    const ATT_MAX_FILE_MB = 40;
+    const ATT_MAX_FILE_MB = 3.2;
 
     const ATT_CATS = {
       passagens:  { label: 'Passagens Aéreas',        icon: 'fa-plane',        chip: 'bg-sky-50 text-sky-600',       layout: 'row',  hint: 'Cartões de embarque, e-tickets e confirmações de voo.' },
@@ -3345,9 +3345,111 @@
     const idbGet = id => idbTx('readonly', s => s.get(id));
     const idbDel = id => idbTx('readwrite', s => s.delete(id));
 
+    function blobToBase64Pure(blob) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => {
+          const res = String(r.result || '');
+          const comma = res.indexOf(',');
+          resolve(comma >= 0 ? res.slice(comma + 1) : res);
+        };
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(blob);
+      });
+    }
+
+    function cloudFilePathFor(id, mime, name) {
+      let ext = '';
+      if (name && /\.[a-z0-9]{2,5}$/i.test(name)) {
+        ext = name.slice(name.lastIndexOf('.')).toLowerCase();
+      } else {
+        const em = extFromMime(mime);
+        ext = em ? '.' + em : '.bin';
+      }
+      return `anexos/${id}${ext}`;
+    }
+
+    function findAttachmentMeta(id) {
+      for (const t of state.trips || []) {
+        const found = (t.attachments || []).find(a => a.id === id);
+        if (found) return found;
+        if (t.coverImage === 'idb:' + id) {
+          return { id, cloudPath: t.coverCloudPath || `anexos/${id}.jpg`, mime: 'image/jpeg', name: `${id}.jpg` };
+        }
+      }
+      return null;
+    }
+
+    async function uploadFileToCloud(id, blob, mime, name) {
+      const token = getAuthToken();
+      if (offlineMode || !token) return null;
+      const filePath = cloudFilePathFor(id, mime, name);
+      try {
+        const base64 = await blobToBase64Pure(blob);
+        const res = await fetch(`${API_DB_ENDPOINT}?action=upload-file`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ filePath, base64, mime })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return data.filePath || filePath;
+        }
+      } catch (err) {
+        console.warn('Falha ao enviar anexo para o GitHub:', err);
+      }
+      return null;
+    }
+
+    async function downloadFileFromCloud(id) {
+      const token = getAuthToken();
+      if (offlineMode || !token) return null;
+      const meta = findAttachmentMeta(id);
+      const filePath = (meta && meta.cloudPath) || `anexos/${id}.jpg`;
+      const mime = (meta && meta.mime) || 'application/octet-stream';
+      try {
+        const res = await fetch(`${API_DB_ENDPOINT}?action=get-file&filePath=${encodeURIComponent(filePath)}&mime=${encodeURIComponent(mime)}`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        let thumb = null;
+        if (blob.type.startsWith('image/') && blob.type !== 'image/gif' && blob.type !== 'image/svg+xml') {
+          try { thumb = await resizeImage(blob, 520, 0.78); } catch (_) {}
+        }
+        await idbPut({ id, tripId: '', blob, thumb }).catch(() => {});
+        return { blob, thumb };
+      } catch (err) {
+        console.warn('Falha ao baixar anexo do GitHub:', err);
+        return null;
+      }
+    }
+
+    async function deleteFileFromCloud(id, explicitPath) {
+      const token = getAuthToken();
+      if (offlineMode || !token) return;
+      const meta = findAttachmentMeta(id);
+      const filePath = explicitPath || (meta && meta.cloudPath) || `anexos/${id}.jpg`;
+      try {
+        await fetch(`${API_DB_ENDPOINT}?action=delete-file&filePath=${encodeURIComponent(filePath)}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.warn('Falha ao remover anexo do GitHub:', err);
+      }
+    }
+
     async function getFileUrls(id) {
       if (fileUrlCache.has(id)) return fileUrlCache.get(id);
-      const rec = await idbGet(id);
+      let rec = await idbGet(id).catch(() => null);
+      if (!rec) {
+        rec = await downloadFileFromCloud(id);
+      }
       if (!rec) return null;
       const urls = {
         full: URL.createObjectURL(rec.blob),
@@ -3416,16 +3518,17 @@
         }
       }
     }
-    function releaseIdbCover(c) {
+    function releaseIdbCover(c, cloudPath) {
       if (c && c.startsWith('idb:')) {
         const k = c.slice(4);
         idbDel(k).catch(() => {});
         dropFileUrls(k);
+        deleteFileFromCloud(k, cloudPath);
       }
     }
-    function resolveEditedCover(oldCover, urlValue) {
+    function resolveEditedCover(oldCover, urlValue, oldCloudPath) {
       if (urlValue) {
-        if (oldCover && oldCover.startsWith('idb:') && oldCover !== urlValue) releaseIdbCover(oldCover);
+        if (oldCover && oldCover.startsWith('idb:') && oldCover !== urlValue) releaseIdbCover(oldCover, oldCloudPath);
         return urlValue;
       }
       return (oldCover && oldCover.startsWith('idb:')) ? oldCover : urlValue;
@@ -3434,15 +3537,17 @@
       const trip = state.trips.find(t => t.id === tripId);
       if (!trip) return;
       try {
-        const blob = await resizeImage(file, 1400, 0.86);
+        const blob = await resizeImage(file, 1400, 0.84);
         const key = uid('cover-');
         await idbPut({ id: key, tripId, blob, thumb: null });
-        releaseIdbCover(trip.coverImage);
+        const cloudPath = await uploadFileToCloud(key, blob, 'image/jpeg', `${key}.jpg`);
+        releaseIdbCover(trip.coverImage, trip.coverCloudPath);
         trip.coverImage = 'idb:' + key;
+        trip.coverCloudPath = cloudPath || `anexos/${key}.jpg`;
         await getFileUrls(key);
-        saveState();
+        await saveState();
         renderCurrentView();
-        showToast('Foto de capa atualizada!');
+        showToast(cloudPath ? 'Foto de capa sincronizada na nuvem!' : 'Foto de capa atualizada localmente!');
       } catch (err) {
         console.error(err);
         showToast('Não foi possível usar essa foto como capa. Tente JPG, PNG ou WebP.', 'error');
@@ -3452,8 +3557,9 @@
       const trip = getActiveTrip();
       if (!trip) return;
       try {
-        const rec = await idbGet(id);
-        if (!rec) { showToast('Arquivo não encontrado neste dispositivo.', 'error'); return; }
+        let rec = await idbGet(id).catch(() => null);
+        if (!rec) rec = await downloadFileFromCloud(id);
+        if (!rec) { showToast('Arquivo não encontrado.', 'error'); return; }
         await applyCoverBlob(trip.id, rec.blob);
         closeCoverPicker();
       } catch (err) {
@@ -3473,8 +3579,9 @@
       const trip = getActiveTrip();
       if (!trip) return;
       showCustomConfirmModal('Restaurar a foto de capa padrão desta viagem?', () => {
-        releaseIdbCover(trip.coverImage);
+        releaseIdbCover(trip.coverImage, trip.coverCloudPath);
         trip.coverImage = DEFAULT_COVER;
+        delete trip.coverCloudPath;
         saveState();
         renderCurrentView();
         closeCoverPicker();
@@ -3506,7 +3613,7 @@
       const prev = qid('tripCoverPreview');
       if (prev) prev.style.backgroundImage = trip ? `url('${coverUrl(trip)}')` : `url('${DEFAULT_COVER}')`;
       const lbl = qid('tripCoverFileName');
-      if (lbl) lbl.textContent = (trip && trip.coverImage && trip.coverImage.startsWith('idb:')) ? 'Foto enviada do seu dispositivo' : '';
+      if (lbl) lbl.textContent = (trip && trip.coverImage && trip.coverImage.startsWith('idb:')) ? 'Foto sincronizada na nuvem' : '';
     }
     function onTripCoverFile(event) {
       const file = event.target.files && event.target.files[0];
@@ -3515,32 +3622,37 @@
       if (!file.type.startsWith('image/')) { showToast('Escolha um arquivo de imagem.', 'error'); return; }
       window.__pendingCoverFile = file;
       qid('tripCoverPreview').style.backgroundImage = `url('${URL.createObjectURL(file)}')`;
-      qid('tripCoverFileName').textContent = file.name + ' (será usada ao salvar)';
+      qid('tripCoverFileName').textContent = file.name + ' (será enviada ao salvar)';
       qid('tripImageInput').value = '';
     }
 
     async function saveAttachmentFile(trip, file, cat, meta) {
-      if (file.size > ATT_MAX_FILE_MB * 1048576) throw new Error('Arquivo maior que ' + ATT_MAX_FILE_MB + ' MB');
       const id = uid('att-');
       let blob = file;
       let thumb = null;
       let mime = file.type || 'application/octet-stream';
       if (mime.startsWith('image/') && mime !== 'image/gif' && mime !== 'image/svg+xml') {
         try {
-          const max = (cat === 'passeios' || cat === 'hospedagem') ? 1920 : 2200;
-          const resized = await resizeImage(file, max, 0.86);
+          const max = (cat === 'passeios' || cat === 'hospedagem') ? 1600 : 1920;
+          const resized = await resizeImage(file, max, 0.84);
           if (resized.size < file.size) { blob = resized; mime = 'image/jpeg'; }
           thumb = await resizeImage(file, 520, 0.78);
         } catch (_) {}
       }
+      if (blob.size > ATT_MAX_FILE_MB * 1048576) {
+        throw new Error('Arquivo maior que ' + ATT_MAX_FILE_MB + ' MB (limite da nuvem)');
+      }
       await idbPut({ id, tripId: trip.id, blob, thumb });
       let name = file.name || 'arquivo';
       if (!/\.[a-z0-9]{2,5}$/i.test(name) && extFromMime(mime)) name += '.' + extFromMime(mime);
+      const cloudPath = await uploadFileToCloud(id, blob, mime, name);
       const att = {
         id, category: cat,
         title: meta.title || name.replace(/\.[^.]+$/, ''),
         note: meta.note || '', date: meta.date || '', code: meta.code || '', linkId: meta.linkId || '',
-        name, mime, size: blob.size, addedAt: new Date().toISOString()
+        name, mime, size: blob.size, addedAt: new Date().toISOString(),
+        cloudPath: cloudPath || cloudFilePathFor(id, mime, name),
+        syncedCloud: Boolean(cloudPath)
       };
       trip.attachments = trip.attachments || [];
       trip.attachments.push(att);
@@ -3548,17 +3660,22 @@
     }
 
     function purgeTripFiles(trip) {
-      (trip.attachments || []).forEach(a => { idbDel(a.id).catch(() => {}); dropFileUrls(a.id); });
-      releaseIdbCover(trip.coverImage);
+      (trip.attachments || []).forEach(a => {
+        idbDel(a.id).catch(() => {});
+        dropFileUrls(a.id);
+        deleteFileFromCloud(a.id, a.cloudPath);
+      });
+      releaseIdbCover(trip.coverImage, trip.coverCloudPath);
     }
 
     function deleteAttachment(id) {
       const trip = getActiveTrip();
       const a = trip && (trip.attachments || []).find(x => x.id === id);
       if (!a) return;
-      showCustomConfirmModal(`Excluir o anexo "${escHtml(a.title)}"? O arquivo será removido deste dispositivo.`, () => {
+      showCustomConfirmModal(`Excluir o anexo "${escHtml(a.title)}"? Ele será removido da nuvem e deste dispositivo.`, () => {
         idbDel(a.id).catch(() => {});
         dropFileUrls(a.id);
+        deleteFileFromCloud(a.id, a.cloudPath);
         trip.attachments = trip.attachments.filter(x => x.id !== id);
         saveState();
         if (!qid('attViewer').classList.contains('hidden')) {
@@ -3567,7 +3684,7 @@
           else { viewerState.idx = Math.min(viewerState.idx, viewerState.ids.length - 1); renderViewer(); }
         }
         renderCurrentView();
-        showToast('Anexo excluído.');
+        showToast('Anexo excluído da nuvem.');
       });
     }
 
@@ -3780,7 +3897,7 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-2 overflow-x-auto pb-1">${pills}</div>
-          <p class="text-[11px] text-slate-400"><i class="fa-solid fa-hard-drive mr-1"></i>${formatBytes(total) || '0 KB'} guardados neste dispositivo</p>
+          <p class="text-[11px] text-slate-400"><i class="fa-solid fa-hard-drive mr-1"></i>${formatBytes(total) || '0 KB'} em anexos sincronizados na nuvem</p>
         </div>
 
         <div class="space-y-8">${cats.map(c => renderAttSection(c, trip)).join('')}</div>
