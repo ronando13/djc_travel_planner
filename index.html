@@ -83,6 +83,19 @@
     .leaflet-tooltip.state-tooltip { font-weight:700; border:0; box-shadow:0 2px 10px #0f172a22; }
     @media (max-width:640px) { .leaflet-map { height:430px; } #worldMap { height:330px; } }
 
+    /* Responsive & Zoom-safe layout rules */
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
     /* Printing rules */
     @media print {
       nav, header, .no-print {
@@ -101,17 +114,18 @@
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-teal-500 selection:text-white">
 
   <!-- TOP HEADER / NAV -->
-  <header class="bg-navy-900 text-white sticky top-0 z-40 shadow-lg border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+  <header class="bg-navy-900 text-white sticky top-0 z-40 shadow-lg border-b border-slate-800 w-full">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <!-- Linha 1: Marca à esquerda | Usuário, Status BD, Viagem Ativa, Nova Viagem e Menu Mobile à direita -->
+      <div class="flex items-center justify-between gap-2 py-2.5 min-h-[60px]">
         <!-- Brand -->
-        <div class="flex items-center space-x-3 cursor-pointer flex-shrink-0 select-none" onclick="switchTab('dashboard')">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 font-black text-xl shadow-md shadow-teal-500/20 flex-shrink-0">
+        <div class="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer flex-shrink-0 select-none" onclick="switchTab('dashboard')">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 font-black text-lg sm:text-xl shadow-md shadow-teal-500/20 flex-shrink-0">
             <i class="fa-solid fa-compass"></i>
           </div>
           <div class="inline-flex flex-col leading-none">
-            <span class="text-lg sm:text-xl font-extrabold tracking-tight whitespace-nowrap bg-gradient-to-r from-white via-teal-100 to-teal-400 bg-clip-text text-transparent">Kisuco Planner</span>
-            <span class="w-full flex items-center justify-between text-[10px] sm:text-[11px] uppercase font-bold text-teal-300/90 tracking-wider mt-1 whitespace-nowrap">
+            <span class="text-base sm:text-xl font-extrabold tracking-tight whitespace-nowrap bg-gradient-to-r from-white via-teal-100 to-teal-400 bg-clip-text text-transparent">Kisuco Planner</span>
+            <span class="w-full flex items-center justify-between text-[9px] sm:text-[11px] uppercase font-bold text-teal-300/90 tracking-wider mt-1 whitespace-nowrap">
               <span>Travel Suite</span>
               <span>-</span>
               <span>1.00</span>
@@ -119,79 +133,87 @@
           </div>
         </div>
 
-        <!-- Navigation tabs (Desktop) -->
-        <nav class="hidden xl:flex items-center space-x-1" id="navDesktop">
-          <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-teal-400 bg-slate-800/70">
-            <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
-          </button>
-          <button onclick="switchTab('trips')" data-tab="trips" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50">
-            <i class="fa-solid fa-map-location-dot mr-1.5"></i> Viagens
-          </button>
-          <button onclick="switchTab('itinerary')" data-tab="itinerary" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50">
-            <i class="fa-solid fa-calendar-days mr-1.5"></i> Roteiro
-          </button>
-          <button onclick="switchTab('checklist')" data-tab="checklist" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50">
-            <i class="fa-solid fa-suitcase-rolling mr-1.5"></i> Bagagem
-          </button>
-          <button onclick="switchTab('budget')" data-tab="budget" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50">
-            <i class="fa-solid fa-wallet mr-1.5"></i> Orçamento
-          </button>
-          <button onclick="switchTab('attachments')" data-tab="attachments" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50">
-            <i class="fa-solid fa-paperclip mr-1.5"></i> Anexos
-          </button>
-          <button onclick="switchTab('maps')" data-tab="maps" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50">
-            <i class="fa-solid fa-earth-americas mr-1.5"></i> Mapa de Conquistas
-          </button>
-          <button id="navUsersBtn" onclick="switchTab('users')" data-tab="users" class="nav-btn hidden px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50">
-            <i class="fa-solid fa-users-gear mr-1.5 text-amber-400"></i> Usuários
-          </button>
-          <button onclick="switchTab('about')" data-tab="about" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50"><i class="fa-solid fa-circle-info mr-1.5"></i> Sobre</button>
-        </nav>
-
-        <!-- Actions, DB Status & Quick Trip Selector -->
-        <div class="flex items-center space-x-2.5">
+        <!-- Actions, User, DB Status & Quick Trip Selector -->
+        <div class="flex items-center space-x-1.5 sm:space-x-2.5 min-w-0">
           <!-- Current User Pill -->
-          <button type="button" id="currentUserBadge" onclick="handleUserBadgeClick()" class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-800 text-teal-300 border border-slate-700 hover:border-teal-500/60 transition cursor-pointer" title="Usuário conectado">
-            <i id="currentUserIcon" class="fa-solid fa-user text-[10px]"></i>
-            <span id="currentUserLabel">Admin</span>
-            <i id="currentUserKeyHint" class="fa-solid fa-key text-[9px] text-slate-400 hidden ml-0.5"></i>
+          <button type="button" id="currentUserBadge" onclick="handleUserBadgeClick()" class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-800 text-teal-300 border border-slate-700 hover:border-teal-500/60 transition cursor-pointer max-w-[140px]" title="Usuário conectado">
+            <i id="currentUserIcon" class="fa-solid fa-user text-[10px] flex-shrink-0"></i>
+            <span id="currentUserLabel" class="truncate">Admin</span>
+            <i id="currentUserKeyHint" class="fa-solid fa-key text-[9px] text-slate-400 hidden ml-0.5 flex-shrink-0"></i>
           </button>
 
           <!-- Database Sync Status Badge -->
-          <button id="dbSyncStatus" onclick="reloadExternalDB()" title="Arquivo: djc_travel_planner_bd.json no GitHub (Clique para recarregar)" class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800/90 text-amber-400 border border-slate-700 hover:border-teal-500/50 transition cursor-pointer">
+          <button id="dbSyncStatus" onclick="reloadExternalDB()" title="Arquivo: djc_travel_planner_bd.json no GitHub (Clique para recarregar)" class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800/90 text-amber-400 border border-slate-700 hover:border-teal-500/50 transition cursor-pointer whitespace-nowrap flex-shrink-0">
             <i id="dbSyncIcon" class="fa-solid fa-circle-notch fa-spin text-[10px]"></i>
             <span id="dbSyncText">Sincronizando...</span>
           </button>
 
-          <!-- Logout / Auth Button -->
-          <button id="authLogoutBtn" onclick="logoutAuth()" title="Trocar Usuário / Sair" class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/90 text-slate-300 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 transition cursor-pointer">
-            <i class="fa-solid fa-right-from-bracket text-xs"></i>
-          </button>
-
-          <!-- Active Trip Selector -->
-          <div class="relative hidden sm:block">
-            <select id="quickTripSelect" onchange="changeActiveTrip(this.value)" class="bg-slate-800 text-teal-300 text-xs font-semibold rounded-lg px-3 py-2 pr-8 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer appearance-none max-w-[170px] truncate">
+          <!-- Active Trip Selector (Desktop / Tablet) -->
+          <div class="relative hidden lg:block">
+            <select id="quickTripSelect" onchange="changeActiveTrip(this.value)" class="bg-slate-800 text-teal-300 text-xs font-semibold rounded-lg px-3 py-2 pr-8 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer appearance-none max-w-[190px] truncate">
               <!-- Dynamically populated -->
             </select>
-            <i class="fa-solid fa-plane-departure absolute right-2.5 top-3 text-xs text-slate-400 pointer-events-none"></i>
+            <i class="fa-solid fa-plane-departure absolute right-2.5 top-2.5 text-xs text-slate-400 pointer-events-none"></i>
           </div>
 
           <!-- New Trip Fast Action Button -->
-          <button onclick="openTripModal()" class="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-navy-950 font-bold px-3.5 py-2 rounded-lg text-xs md:text-sm flex items-center shadow-md transition transform active:scale-95">
-            <i class="fa-solid fa-plus mr-1.5"></i>
-            <span class="hidden sm:inline">Nova</span> Viagem
+          <button onclick="openTripModal()" class="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-navy-950 font-bold px-2.5 sm:px-3.5 py-2 rounded-lg text-xs flex items-center shadow-md transition transform active:scale-95 whitespace-nowrap flex-shrink-0">
+            <i class="fa-solid fa-plus sm:mr-1.5"></i>
+            <span class="hidden sm:inline">Nova Viagem</span>
           </button>
 
-          <!-- Mobile Menu Trigger -->
-          <button onclick="toggleMobileMenu()" class="xl:hidden text-slate-300 hover:text-white p-2 focus:outline-none">
-            <i class="fa-solid fa-bars text-xl"></i>
+          <!-- Logout / Auth Button -->
+          <button id="authLogoutBtn" onclick="logoutAuth()" title="Trocar Usuário / Sair" class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/90 text-slate-300 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 transition cursor-pointer flex-shrink-0">
+            <i class="fa-solid fa-right-from-bracket text-xs"></i>
+          </button>
+
+          <!-- Mobile / Tablet Menu Trigger -->
+          <button onclick="toggleMobileMenu()" aria-label="Abrir menu" class="lg:hidden text-slate-300 hover:text-white p-2 rounded-lg hover:bg-slate-800 focus:outline-none flex-shrink-0">
+            <i class="fa-solid fa-bars text-lg"></i>
           </button>
         </div>
       </div>
+
+      <!-- Linha 2: Barra de Navegação Desktop (auto-ajustável ao zoom e largura da tela sem estourar) -->
+      <nav class="hidden lg:flex items-center flex-wrap gap-1 py-2 border-t border-slate-800/80" id="navDesktop">
+        <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-teal-400 bg-slate-800/70 whitespace-nowrap">
+          <i class="fa-solid fa-chart-pie mr-1.5"></i> Dashboard
+        </button>
+        <button onclick="switchTab('trips')" data-tab="trips" class="nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50 whitespace-nowrap">
+          <i class="fa-solid fa-map-location-dot mr-1.5"></i> Viagens
+        </button>
+        <button onclick="switchTab('itinerary')" data-tab="itinerary" class="nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50 whitespace-nowrap">
+          <i class="fa-solid fa-calendar-days mr-1.5"></i> Roteiro
+        </button>
+        <button onclick="switchTab('checklist')" data-tab="checklist" class="nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50 whitespace-nowrap">
+          <i class="fa-solid fa-suitcase-rolling mr-1.5"></i> Bagagem
+        </button>
+        <button onclick="switchTab('budget')" data-tab="budget" class="nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50 whitespace-nowrap">
+          <i class="fa-solid fa-wallet mr-1.5"></i> Orçamento
+        </button>
+        <button onclick="switchTab('attachments')" data-tab="attachments" class="nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50 whitespace-nowrap">
+          <i class="fa-solid fa-paperclip mr-1.5"></i> Anexos
+        </button>
+        <button onclick="switchTab('maps')" data-tab="maps" class="nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50 whitespace-nowrap">
+          <i class="fa-solid fa-earth-americas mr-1.5"></i> Mapa de Conquistas
+        </button>
+        <button id="navUsersBtn" onclick="switchTab('users')" data-tab="users" class="nav-btn hidden px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50 whitespace-nowrap">
+          <i class="fa-solid fa-users-gear mr-1.5 text-amber-400"></i> Usuários
+        </button>
+        <button onclick="switchTab('about')" data-tab="about" class="nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50 whitespace-nowrap">
+          <i class="fa-solid fa-circle-info mr-1.5"></i> Sobre
+        </button>
+      </nav>
     </div>
 
-    <!-- Mobile Drawer Nav -->
-    <div id="mobileMenu" class="hidden xl:hidden bg-slate-900 border-t border-slate-800 px-4 py-3 space-y-1">
+    <!-- Mobile / Tablet Drawer Nav -->
+    <div id="mobileMenu" class="hidden lg:hidden bg-slate-900 border-t border-slate-800 px-4 py-3 space-y-1 max-h-[82vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+        <span id="mobileUserGreeting" class="text-xs font-bold text-teal-300 truncate"></span>
+        <button onclick="reloadExternalDB()" class="text-[11px] font-semibold text-amber-400 hover:text-amber-300 px-2 py-1 rounded bg-slate-800">
+          <i class="fa-solid fa-rotate mr-1"></i> Sincronizar BD
+        </button>
+      </div>
       <div class="mb-3 pt-1">
         <label class="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Viagem Selecionada:</label>
         <select id="mobileTripSelect" onchange="changeActiveTrip(this.value)" class="w-full mt-1 bg-slate-800 text-teal-300 text-sm font-semibold rounded-lg p-2 border border-slate-700">
@@ -1702,10 +1724,36 @@
         if (badge) badge.classList.add('hidden');
       }
 
+      const mobileGreeting = document.getElementById('mobileUserGreeting');
+      if (mobileGreeting) {
+        mobileGreeting.textContent = currentSession
+          ? `Conectado: ${currentSession.name || currentSession.username}`
+          : 'Não conectado';
+      }
+
       if (navUsers) navUsers.classList.toggle('hidden', !showAdmin);
       if (mobileNavUsers) mobileNavUsers.classList.toggle('hidden', !showAdmin);
       if (mobileChangePwd) mobileChangePwd.classList.toggle('hidden', !isRegularUser);
     }
+
+    /* Detecção automática de formato de dispositivo / viewport (Mobile vs Tablet vs Desktop) */
+    function detectAndApplyDeviceLayout() {
+      const width = window.innerWidth;
+      const isTouchMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const mode = width < 768 ? 'mobile' : (width < 1024 ? 'tablet' : 'desktop');
+      document.documentElement.dataset.deviceMode = mode;
+      document.documentElement.dataset.isTouch = isTouchMobile ? 'true' : 'false';
+
+      // Fecha automaticamente o menu gaveta se o usuário aumentar a janela/zoom para modo desktop
+      if (mode === 'desktop') {
+        const menu = document.getElementById('mobileMenu');
+        if (menu && !menu.classList.contains('hidden')) {
+          menu.classList.add('hidden');
+        }
+      }
+    }
+    window.addEventListener('resize', detectAndApplyDeviceLayout);
+    window.addEventListener('orientationchange', detectAndApplyDeviceLayout);
 
     function handleUserBadgeClick() {
       if (!currentSession) return;
@@ -2257,10 +2305,12 @@
       if (activeEl) activeEl.classList.remove('hidden');
 
       document.querySelectorAll('.nav-btn').forEach(btn => {
+        const isUsers = btn.id === 'navUsersBtn';
+        const hiddenCls = (isUsers && !isCurrentUserAdmin()) ? ' hidden' : '';
         if (btn.getAttribute('data-tab') === tabName) {
-          btn.className = 'nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-teal-400 bg-slate-800/80 shadow-inner';
+          btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-teal-400 bg-slate-800/80 shadow-inner whitespace-nowrap' + hiddenCls;
         } else {
-          btn.className = 'nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50';
+          btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50 whitespace-nowrap' + hiddenCls;
         }
       });
 
@@ -5135,6 +5185,7 @@ Senha: ${u.password}`;
      * INITIALIZATION
      * ------------------------------------------------------------- */
     window.onload = async function() {
+      detectAndApplyDeviceLayout();
       await loadState();
       await preloadCovers();
       switchTab('dashboard');
