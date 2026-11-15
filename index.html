@@ -105,13 +105,17 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <!-- Brand -->
-        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 font-black text-xl shadow-md shadow-teal-500/20">
+        <div class="flex items-center space-x-3 cursor-pointer flex-shrink-0 select-none" onclick="switchTab('dashboard')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 font-black text-xl shadow-md shadow-teal-500/20 flex-shrink-0">
             <i class="fa-solid fa-compass"></i>
           </div>
-          <div>
-            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-teal-100 to-teal-400 bg-clip-text text-transparent">Kisuco Planner</span>
-            <span class="hidden sm:inline-block text-xs uppercase px-2 py-0.5 rounded-full bg-teal-950/80 text-teal-300 font-bold border border-teal-800/60 ml-2">Travel Suite</span>
+          <div class="inline-flex flex-col leading-none">
+            <span class="text-lg sm:text-xl font-extrabold tracking-tight whitespace-nowrap bg-gradient-to-r from-white via-teal-100 to-teal-400 bg-clip-text text-transparent">Kisuco Planner</span>
+            <span class="w-full flex items-center justify-between text-[10px] sm:text-[11px] uppercase font-bold text-teal-300/90 tracking-wider mt-1 whitespace-nowrap">
+              <span>Travel Suite</span>
+              <span>-</span>
+              <span>1.00</span>
+            </span>
           </div>
         </div>
 
@@ -746,13 +750,84 @@
 
     <section id="tab-about" class="tab-content hidden space-y-6">
       <div class="bg-gradient-to-r from-navy-900 via-slate-900 to-teal-950 text-white rounded-2xl p-7 sm:p-9 shadow-sm">
-        <div class="flex items-center gap-4"><div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 text-2xl shadow-lg"><i class="fa-solid fa-compass"></i></div><div><p class="text-xs uppercase tracking-widest text-teal-300 font-bold">Sobre o aplicativo</p><h2 class="text-2xl sm:text-3xl font-black">Kisuco Planner</h2><p class="text-sm text-slate-300 mt-1">Gestão de viagens, roteiros e conquistas pelo mundo.</p></div></div>
-        <div class="mt-6 inline-flex items-center gap-2 rounded-full bg-teal-400/10 border border-teal-300/30 px-4 py-2 text-sm font-bold text-teal-200"><i class="fa-solid fa-code-branch"></i> Versão 1.03</div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 text-2xl shadow-lg flex-shrink-0">
+              <i class="fa-solid fa-compass"></i>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-widest text-teal-300 font-bold">Sobre o aplicativo</p>
+              <h2 class="text-2xl sm:text-3xl font-black">Kisuco Planner</h2>
+              <p class="text-sm text-slate-300 mt-0.5">Travel Suite · Gestão completa de viagens, roteiros, finanças e conquistas pelo mundo.</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-2 rounded-full bg-teal-400/15 border border-teal-300/30 px-4 py-1.5 text-xs font-bold text-teal-200">
+              <i class="fa-solid fa-code-branch"></i> Versão 1.00
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full bg-amber-400/15 border border-amber-300/30 px-4 py-1.5 text-xs font-bold text-amber-200">
+              <i class="fa-solid fa-code"></i> Criado por DJC-Soluções
+            </span>
+          </div>
+        </div>
       </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-list-check text-teal-600 mr-2"></i>Funcionalidades</h3><ul class="space-y-2 text-sm text-slate-600"><li>• Dashboard com visão geral das viagens</li><li>• Cadastro e acompanhamento de viagens</li><li>• Cronograma diário e roteiro de atividades</li><li>• Checklist de bagagem e preparativos</li><li>• Orçamento, gastos e despesas</li><li>• Anexos e documentos de viagem</li><li>• Mapas de conquistas do Brasil e do mundo (Você, Esposa e Ambos)</li></ul></div>
-        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-database text-teal-600 mr-2"></i>Armazenamento de dados</h3><p class="text-sm text-slate-600 leading-relaxed">Os dados principais e os anexos (pasta <code class="text-teal-700">anexos/</code>) são sincronizados automaticamente via API segura (<code class="text-teal-700">/api/db</code>) no seu repositório privado no GitHub, com cache rápido IndexedDB no navegador para acesso imediato em qualquer dispositivo.</p><p class="text-xs text-slate-400 mt-3">Recomenda-se exportar backups regularmente. O armazenamento local de anexos depende do navegador e da origem utilizada para abrir o aplicativo.</p></div>
-        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm md:col-span-2"><h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-map text-teal-600 mr-2"></i>Informações cartográficas</h3><p class="text-sm text-slate-600 leading-relaxed">Os mapas do Brasil e do mundo são desenhados com polígonos vetoriais GeoJSON, sem depender de imagens de blocos (tiles). Os limites estaduais brasileiros são derivados da malha territorial do IBGE; os contornos dos países são carregados de uma base GeoJSON pública. A biblioteca Leaflet fornece zoom e navegação. É necessária conexão com a internet para carregar a biblioteca e os dados geográficos.</p><p class="text-xs text-slate-400 mt-3">Kisuco Planner · Versão interna 1.03</p></div>
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm md:col-span-2">
+          <h3 class="font-bold text-navy-900 mb-4 flex items-center text-base">
+            <i class="fa-solid fa-list-check text-teal-600 mr-2"></i> Funcionalidades do Sistema
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-sm text-slate-600">
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <strong class="text-navy-900 block mb-0.5"><i class="fa-solid fa-chart-pie text-teal-600 mr-1.5"></i>Dashboard Inteligente</strong>
+              Visão geral com contagem de viagens, metas exploradas no Brasil e no mundo, progresso da bagagem e saldo financeiro.
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <strong class="text-navy-900 block mb-0.5"><i class="fa-solid fa-map-location-dot text-teal-600 mr-1.5"></i>Gestão & Compartilhamento de Viagens</strong>
+              Cadastro completo de destinos, datas e capas personalizadas, com opção de compartilhar viagens específicas entre várias famílias.
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <strong class="text-navy-900 block mb-0.5"><i class="fa-solid fa-calendar-days text-teal-600 mr-1.5"></i>Cronograma & Roteiro Dia a Dia</strong>
+              Organização detalhada de passeios, horários, endereços, reservas e impressão limpa do roteiro completo.
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <strong class="text-navy-900 block mb-0.5"><i class="fa-solid fa-suitcase-rolling text-teal-600 mr-1.5"></i>Checklist de Bagagem</strong>
+              Listas organizadas por categorias (documentos, roupas, eletrônicos, farmácia) com barra de progresso em tempo real.
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <strong class="text-navy-900 block mb-0.5"><i class="fa-solid fa-wallet text-teal-600 mr-1.5"></i>Orçamento & Controle de Gastos</strong>
+              Comparativo entre valor previsto e gasto real por categoria, formas de pagamento e gráfico de distribuição.
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <strong class="text-navy-900 block mb-0.5"><i class="fa-solid fa-paperclip text-teal-600 mr-1.5"></i>Anexos & Hospedagens na Nuvem</strong>
+              Armazenamento sincronizado de passagens aéreas, recibos, vouchers, fotos de passeios e endereços com atalho para o mapa.
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <strong class="text-navy-900 block mb-0.5"><i class="fa-solid fa-earth-americas text-teal-600 mr-1.5"></i>Mapa de Conquistas (Brasil & Mundo)</strong>
+              Mapa interativo individual por usuário para marcar estados e países visitados (Você, Esposa ou Ambos).
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <strong class="text-navy-900 block mb-0.5"><i class="fa-solid fa-users-gear text-teal-600 mr-1.5"></i>Multi-Usuário & Administração</strong>
+              Logins independentes para cada família, alteração de senha pelo próprio usuário e painel administrativo completo.
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          <h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-database text-teal-600 mr-2"></i>Armazenamento & Sincronização</h3>
+          <p class="text-sm text-slate-600 leading-relaxed">Os dados principais (<code class="text-teal-700">djc_travel_planner_bd.json</code>) e os anexos (pasta <code class="text-teal-700">anexos/</code>) são sincronizados automaticamente via API segura (<code class="text-teal-700">/api/db</code>) em repositório privado no GitHub, com cache rápido IndexedDB no navegador para acesso imediato entre computador e celular.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-navy-900 mb-3"><i class="fa-solid fa-building text-teal-600 mr-2"></i>Desenvolvimento</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">Desenvolvido por <strong class="text-navy-900">DJC-Soluções</strong>. Os mapas do Brasil e do mundo utilizam polígonos vetoriais GeoJSON baseados na malha territorial do IBGE e bases cartográficas públicas via Leaflet.</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span><strong>Kisuco Planner</strong> · Travel Suite</span>
+            <span class="font-bold text-teal-700">Versão 1.00 · DJC-Soluções</span>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -1449,7 +1524,7 @@
     /* -------------------------------------------------------------
      * APPLICATION STATE & EXTERNAL DATABASE (djc_travel_planner_bd.json)
      * ------------------------------------------------------------- */
-    const APP_VERSION = '1.03';
+    const APP_VERSION = '1.00';
     const APP_NAME = 'Kisuco Planner';
     const EXTERNAL_DB_FILE = 'djc_travel_planner_bd.json';
     const STORAGE_KEY = 'djc_travel_planner_bd_v1';
