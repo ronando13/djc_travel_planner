@@ -138,11 +138,20 @@
           <button onclick="switchTab('maps')" data-tab="maps" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50">
             <i class="fa-solid fa-earth-americas mr-1.5"></i> Mapa de Conquistas
           </button>
+          <button id="navUsersBtn" onclick="switchTab('users')" data-tab="users" class="nav-btn hidden px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50">
+            <i class="fa-solid fa-users-gear mr-1.5 text-amber-400"></i> Usuários
+          </button>
           <button onclick="switchTab('about')" data-tab="about" class="nav-btn px-3 py-2 rounded-lg text-sm font-semibold transition text-slate-300 hover:text-white hover:bg-slate-800/50"><i class="fa-solid fa-circle-info mr-1.5"></i> Sobre</button>
         </nav>
 
         <!-- Actions, DB Status & Quick Trip Selector -->
         <div class="flex items-center space-x-2.5">
+          <!-- Current User Pill -->
+          <div id="currentUserBadge" class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-800 text-teal-300 border border-slate-700" title="Usuário conectado">
+            <i id="currentUserIcon" class="fa-solid fa-user text-[10px]"></i>
+            <span id="currentUserLabel">Admin</span>
+          </div>
+
           <!-- Database Sync Status Badge -->
           <button id="dbSyncStatus" onclick="reloadExternalDB()" title="Arquivo: djc_travel_planner_bd.json no GitHub (Clique para recarregar)" class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800/90 text-amber-400 border border-slate-700 hover:border-teal-500/50 transition cursor-pointer">
             <i id="dbSyncIcon" class="fa-solid fa-circle-notch fa-spin text-[10px]"></i>
@@ -150,7 +159,7 @@
           </button>
 
           <!-- Logout / Auth Button -->
-          <button id="authLogoutBtn" onclick="logoutAuth()" title="Bloquear / Sair do Servidor" class="hidden md:flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/90 text-slate-300 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 transition cursor-pointer">
+          <button id="authLogoutBtn" onclick="logoutAuth()" title="Trocar Usuário / Sair" class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800/90 text-slate-300 hover:text-rose-400 border border-slate-700 hover:border-rose-500/50 transition cursor-pointer">
             <i class="fa-solid fa-right-from-bracket text-xs"></i>
           </button>
 
@@ -190,6 +199,7 @@
       <button onclick="switchTab('budget'); toggleMobileMenu()" class="block w-full text-left py-2 px-3 rounded-lg text-slate-200 hover:bg-slate-800 text-sm font-medium"><i class="fa-solid fa-wallet w-6 text-teal-400"></i> Orçamento & Gastos</button>
       <button onclick="switchTab('attachments'); toggleMobileMenu()" class="block w-full text-left py-2 px-3 rounded-lg text-slate-200 hover:bg-slate-800 text-sm font-medium"><i class="fa-solid fa-paperclip w-6 text-teal-400"></i> Anexos & Gastos</button>
       <button onclick="switchTab('maps'); toggleMobileMenu()" class="block w-full text-left py-2 px-3 rounded-lg text-slate-200 hover:bg-slate-800 text-sm font-medium"><i class="fa-solid fa-earth-americas w-6 text-teal-400"></i> Mapa de Conquistas</button>
+      <button id="mobileNavUsersBtn" onclick="switchTab('users'); toggleMobileMenu()" class="hidden block w-full text-left py-2 px-3 rounded-lg text-amber-300 hover:bg-slate-800 text-sm font-medium"><i class="fa-solid fa-users-gear w-6 text-amber-400"></i> Gerenciar Usuários</button>
       <button onclick="switchTab('about'); toggleMobileMenu()" class="block w-full text-left py-2 px-3 rounded-lg text-slate-200 hover:bg-slate-800 text-sm font-medium"><i class="fa-solid fa-circle-info w-6 text-teal-400"></i> Sobre</button>
       <button onclick="logoutAuth(); toggleMobileMenu()" class="block w-full text-left py-2 px-3 rounded-lg text-rose-400 hover:bg-slate-800 text-sm font-medium"><i class="fa-solid fa-right-from-bracket w-6"></i> Sair / Bloquear BD</button>
     </div>
@@ -699,6 +709,39 @@
       </div>
     </section>
 
+        <!-- ============================================== -->
+    <!-- TAB 7: GERENCIAR USUÁRIOS (ADMINISTRADOR) -->
+    <!-- ============================================== -->
+    <section id="tab-users" class="tab-content hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <span class="text-[11px] uppercase tracking-wider font-extrabold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">Painel do Administrador</span>
+          <h2 class="text-xl font-bold text-navy-900 mt-1">Usuários & Famílias</h2>
+          <p class="text-xs sm:text-sm text-slate-500">Crie logins independentes para outras famílias ou membros, visualize ou edite senhas e controle o acesso.</p>
+        </div>
+        <button onclick="openUserModal()" class="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow transition flex items-center">
+          <i class="fa-solid fa-user-plus mr-1.5"></i> Novo Usuário
+        </button>
+      </div>
+
+      <!-- Info Banner -->
+      <div class="bg-gradient-to-r from-navy-900 via-slate-900 to-teal-950 text-white rounded-2xl p-5 shadow-sm border border-slate-700/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <h3 class="text-sm sm:text-base font-bold flex items-center">
+            <i class="fa-solid fa-shield-halved text-teal-400 mr-2"></i> Como funciona o acesso independente e compartilhamento
+          </h3>
+          <p class="text-xs text-slate-300 leading-relaxed max-w-3xl">
+            Cada usuário possui seu próprio login, senha, viagens e mapa de conquistas independentes. Para viagens em conjunto entre duas ou mais famílias, basta editar a viagem e marcar quais usuários têm permissão para visualizá-la e colaborarem no roteiro, bagagem, orçamento e anexos.
+          </p>
+        </div>
+      </div>
+
+      <!-- Users List Grid -->
+      <div id="usersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Dynamically populated user cards -->
+      </div>
+    </section>
+
     <section id="tab-about" class="tab-content hidden space-y-6">
       <div class="bg-gradient-to-r from-navy-900 via-slate-900 to-teal-950 text-white rounded-2xl p-7 sm:p-9 shadow-sm">
         <div class="flex items-center gap-4"><div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 text-2xl shadow-lg"><i class="fa-solid fa-compass"></i></div><div><p class="text-xs uppercase tracking-widest text-teal-300 font-bold">Sobre o aplicativo</p><h2 class="text-2xl sm:text-3xl font-black">Kisuco Planner</h2><p class="text-sm text-slate-300 mt-1">Gestão de viagens, roteiros e conquistas pelo mundo.</p></div></div>
@@ -716,21 +759,30 @@
   <!-- MODALS -->
   <!-- ============================================== -->
 
-    <!-- AUTH / LOGIN MODAL (Servidor DJC / Vercel + GitHub) -->
+  <!-- AUTH / LOGIN MODAL (Multi-Usuário + Admin) -->
   <div id="authModal" class="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
       <div class="flex flex-col items-center text-center mb-5">
         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-navy-950 text-xl shadow-md mb-3">
-          <i class="fa-solid fa-lock"></i>
+          <i class="fa-solid fa-compass"></i>
         </div>
-        <h3 class="text-lg font-extrabold text-navy-900">Acesso Restrito</h3>
-        <p class="text-xs text-slate-500 mt-1">Digite a senha mestra para sincronizar o banco de dados no GitHub.</p>
+        <h3 class="text-lg font-extrabold text-navy-900">Kisuco Planner</h3>
+        <p class="text-xs text-slate-500 mt-1">Entre com seu usuário e senha para acessar suas viagens.</p>
       </div>
       <form onsubmit="submitAuthLogin(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Senha de Acesso</label>
-          <input type="password" id="authPasswordInput" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" />
-          <p id="authErrorText" class="text-xs text-rose-600 font-semibold mt-1.5 hidden">Senha incorreta ou falha na conexão com /api/db.</p>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Usuário / Login</label>
+          <input type="text" id="authUsernameInput" required autocomplete="username" placeholder="Ex: admin ou familia2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Senha</label>
+          <div class="relative">
+            <input type="password" id="authPasswordInput" required autocomplete="current-password" placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+            <button type="button" onclick="toggleLoginPasswordVisibility()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+              <i id="loginPwdEyeIcon" class="fa-solid fa-eye text-sm"></i>
+            </button>
+          </div>
+          <p id="authErrorText" class="text-xs text-rose-600 font-semibold mt-1.5 hidden">Usuário ou senha incorretos.</p>
         </div>
         <button type="submit" id="authSubmitBtn" class="w-full py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow transition">
           Entrar e Sincronizar
@@ -738,6 +790,53 @@
         <button type="button" onclick="continueOfflineMode()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-xl transition">
           Usar modo offline (Cache Local)
         </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- USER CREATE / EDIT MODAL (ADMIN) -->
+  <div id="userModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+        <h3 id="userModalTitle" class="text-lg font-bold text-navy-900">Novo Usuário</h3>
+        <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="userForm" onsubmit="saveUserForm(event)" class="space-y-4 text-xs sm:text-sm">
+        <input type="hidden" id="userEditIdInput" />
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Nome / Identificação da Família *</label>
+          <input type="text" id="userNameInput" required placeholder="Ex: Família Silva, João & Maria..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Login de Acesso *</label>
+          <input type="text" id="userLoginInput" required placeholder="Ex: familia2 (sem espaços)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-teal-500 focus:outline-none" />
+          <p class="text-[11px] text-slate-400 mt-1">Usado para entrar no aplicativo (não diferencia maiúsculas/minúsculas).</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Senha *</label>
+          <div class="relative">
+            <input type="text" id="userPasswordInput" required placeholder="Digite a senha do usuário" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 pr-10 focus:ring-2 focus:ring-teal-500 focus:outline-none font-mono" />
+            <button type="button" onclick="generateRandomUserPassword()" title="Gerar senha aleatória" class="absolute right-2.5 top-2 px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[11px] font-bold">
+              Gerar
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-1">
+          <input type="checkbox" id="userActiveInput" checked class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500" />
+          <label for="userActiveInput" class="text-xs font-semibold text-slate-700 select-none">Usuário ativo (pode fazer login)</label>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeUserModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition">Cancelar</button>
+          <button type="submit" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition shadow">Salvar Usuário</button>
+        </div>
       </form>
     </div>
   </div>
@@ -814,6 +913,20 @@
               <button type="button" onclick="setPresetImage('https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=800&q=80')" class="text-[10px] px-2 py-1 bg-slate-100 rounded-lg hover:bg-teal-50">Europa</button>
               <button type="button" onclick="setPresetImage('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80')" class="text-[10px] px-2 py-1 bg-slate-100 rounded-lg hover:bg-teal-50">Montanha</button>
             </div>
+          </div>
+        </div>
+
+        <!-- Compartilhamento com outras Famílias / Usuários -->
+        <div id="tripSharingSection" class="pt-3 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="font-bold text-slate-700 flex items-center">
+              <i class="fa-solid fa-share-nodes text-teal-600 mr-1.5"></i> Compartilhar viagem com outras famílias
+            </label>
+            <span id="tripOwnerBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"></span>
+          </div>
+          <p class="text-[11px] text-slate-400 mb-2">Selecione os usuários autorizados a visualizar e colaborar nesta viagem:</p>
+          <div id="tripShareUsersList" class="space-y-1.5 max-h-36 overflow-y-auto p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+            <!-- Checkboxes populados dinamicamente -->
           </div>
         </div>
 
@@ -1419,20 +1532,86 @@
     }
 
     const AUTH_TOKEN_KEY = 'djc_travel_planner_auth_v1';
+    const AUTH_USER_KEY = 'djc_travel_planner_user_v1';
     const API_DB_ENDPOINT = '/api/db';
     let offlineMode = false;
+    let currentSession = null; // { id, name, username, isAdmin, token }
+    let visiblePasswordsMap = {}; // { userId: true/false }
 
     function getAuthToken() {
       return localStorage.getItem(AUTH_TOKEN_KEY) || '';
     }
 
-    function openAuthModal(showError = false) {
+    function getSavedSession() {
+      try {
+        const raw = localStorage.getItem(AUTH_USER_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function isCurrentUserAdmin() {
+      return Boolean(currentSession && currentSession.isAdmin);
+    }
+
+    function getCurrentUserId() {
+      return (currentSession && currentSession.id) || 'admin';
+    }
+
+    function updateUserHeaderUI() {
+      const badge = document.getElementById('currentUserBadge');
+      const label = document.getElementById('currentUserLabel');
+      const icon = document.getElementById('currentUserIcon');
+      const navUsers = document.getElementById('navUsersBtn');
+      const mobileNavUsers = document.getElementById('mobileNavUsersBtn');
+
+      if (currentSession) {
+        if (badge) badge.classList.remove('hidden');
+        if (label) label.textContent = currentSession.name || currentSession.username;
+        if (icon) {
+          icon.className = currentSession.isAdmin
+            ? 'fa-solid fa-crown text-amber-400 text-[10px]'
+            : 'fa-solid fa-user text-teal-400 text-[10px]';
+        }
+      } else {
+        if (badge) badge.classList.add('hidden');
+      }
+
+      const showAdmin = isCurrentUserAdmin();
+      if (navUsers) navUsers.classList.toggle('hidden', !showAdmin);
+      if (mobileNavUsers) mobileNavUsers.classList.toggle('hidden', !showAdmin);
+    }
+
+    function toggleLoginPasswordVisibility() {
+      const inp = document.getElementById('authPasswordInput');
+      const icon = document.getElementById('loginPwdEyeIcon');
+      if (!inp) return;
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        if (icon) icon.className = 'fa-solid fa-eye-slash text-sm';
+      } else {
+        inp.type = 'password';
+        if (icon) icon.className = 'fa-solid fa-eye text-sm';
+      }
+    }
+
+    function openAuthModal(showError = false, customMsg = '') {
       const modal = document.getElementById('authModal');
       const errEl = document.getElementById('authErrorText');
-      if (errEl) errEl.classList.toggle('hidden', !showError);
+      if (errEl) {
+        if (customMsg) errEl.textContent = customMsg;
+        else errEl.textContent = 'Usuário ou senha incorretos.';
+        errEl.classList.toggle('hidden', !showError);
+      }
       if (modal) {
         modal.classList.remove('hidden');
-        setTimeout(() => document.getElementById('authPasswordInput')?.focus(), 100);
+        const saved = getSavedSession();
+        const uInp = document.getElementById('authUsernameInput');
+        if (uInp && saved && saved.username && !uInp.value) {
+          uInp.value = saved.username;
+        }
+        setTimeout(() => (uInp && !uInp.value ? uInp : document.getElementById('authPasswordInput'))?.focus(), 100);
       }
     }
 
@@ -1443,36 +1622,79 @@
 
     async function submitAuthLogin(event) {
       event.preventDefault();
-      const input = document.getElementById('authPasswordInput');
+      const uInput = document.getElementById('authUsernameInput');
+      const pInput = document.getElementById('authPasswordInput');
       const btn = document.getElementById('authSubmitBtn');
       const errEl = document.getElementById('authErrorText');
-      const pwd = (input?.value || '').trim();
-      if (!pwd) return;
+
+      const username = (uInput?.value || '').trim().toLowerCase();
+      const password = (pInput?.value || '').trim();
+      if (!username || !password) return;
 
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i> Verificando...';
       if (errEl) errEl.classList.add('hidden');
 
-      localStorage.setItem(AUTH_TOKEN_KEY, pwd);
-      offlineMode = false;
-      const ok = await loadState(true, true);
+      try {
+        const res = await fetch(`${API_DB_ENDPOINT}?action=login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
 
-      btn.disabled = false;
-      btn.textContent = 'Entrar e Sincronizar';
+        const data = await res.json().catch(() => ({}));
 
-      if (ok) {
-        input.value = '';
+        if (!res.ok || !data.ok || !data.token) {
+          btn.disabled = false;
+          btn.textContent = 'Entrar e Sincronizar';
+          if (errEl) {
+            errEl.textContent = data.error || 'Usuário ou senha incorretos.';
+            errEl.classList.remove('hidden');
+          }
+          return;
+        }
+
+        currentSession = {
+          id: data.user.id,
+          name: data.user.name,
+          username: data.user.username,
+          isAdmin: Boolean(data.user.isAdmin),
+          token: data.token
+        };
+        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentSession));
+        offlineMode = false;
+
+        await loadState(true, true);
+        updateUserHeaderUI();
+
+        btn.disabled = false;
+        btn.textContent = 'Entrar e Sincronizar';
+        pInput.value = '';
         closeAuthModal();
         await preloadCovers();
-        renderCurrentView();
-      } else {
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        if (errEl) errEl.classList.remove('hidden');
+        if (!isCurrentUserAdmin() && state.activeTab === 'users') {
+          state.activeTab = 'dashboard';
+        }
+        switchTab(state.activeTab || 'dashboard');
+        showToast(`Bem-vindo(a), ${currentSession.name}!`);
+      } catch (err) {
+        console.error('Erro no login:', err);
+        btn.disabled = false;
+        btn.textContent = 'Entrar e Sincronizar';
+        if (errEl) {
+          errEl.textContent = 'Falha ao conectar com o servidor.';
+          errEl.classList.remove('hidden');
+        }
       }
     }
 
     function continueOfflineMode() {
       offlineMode = true;
+      if (!currentSession) {
+        currentSession = getSavedSession() || { id: 'admin', name: 'Offline (Local)', username: 'admin', isAdmin: true };
+      }
+      updateUserHeaderUI();
       closeAuthModal();
       updateDbSyncBadge('local', 'Modo Offline');
       showToast('Operando em cache local (sem sincronizar com GitHub).');
@@ -1480,15 +1702,75 @@
 
     function logoutAuth() {
       localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      currentSession = null;
       offlineMode = false;
+      visiblePasswordsMap = {};
+      updateUserHeaderUI();
       updateDbSyncBadge('local', 'Bloqueado');
       openAuthModal(false);
+    }
+
+    function ensureUsersAndOwnership() {
+      if (!Array.isArray(state.users)) state.users = [];
+      if (!state.userMaps || typeof state.userMaps !== 'object') state.userMaps = {};
+
+      // Garante que o admin exista na estrutura de mapas
+      if (!state.userMaps['admin']) {
+        state.userMaps['admin'] = {
+          visitedStatesByPerson: state.visitedStatesByPerson || { 'RS': 'both', 'SC': 'both', 'BA': 'both', 'SP': 'both', 'MS': 'user' },
+          visitedContinentsByPerson: state.visitedContinentsByPerson || { 'sa': 'both', 'na': 'both' },
+          visitedCountriesByPerson: state.visitedCountriesByPerson || { 'br': 'both', 'uy': 'both', 'do': 'both', 'ar': 'user' }
+        };
+      }
+
+      // Garante que viagens antigas sem ownerId pertençam ao admin e tenham sharedWith
+      (state.trips || []).forEach(t => {
+        if (!t.ownerId) t.ownerId = 'admin';
+        if (!Array.isArray(t.sharedWith)) t.sharedWith = [];
+      });
+    }
+
+    function getUserVisitedData() {
+      ensureUsersAndOwnership();
+      const uid = getCurrentUserId();
+      if (!state.userMaps[uid]) {
+        state.userMaps[uid] = {
+          visitedStatesByPerson: {},
+          visitedContinentsByPerson: {},
+          visitedCountriesByPerson: {}
+        };
+      }
+      return state.userMaps[uid];
+    }
+
+    function getAccessibleTrips() {
+      ensureUsersAndOwnership();
+      const uid = getCurrentUserId();
+      return (state.trips || []).filter(t => {
+        if (t.ownerId === uid) return true;
+        if (Array.isArray(t.sharedWith) && t.sharedWith.includes(uid)) return true;
+        return false;
+      });
+    }
+
+    function canManageTripSharing(trip) {
+      if (!trip) return false;
+      return trip.ownerId === getCurrentUserId() || isCurrentUserAdmin();
+    }
+
+    function getUserDisplayName(userId) {
+      if (userId === 'admin') return 'Administrador (Principal)';
+      const u = (state.users || []).find(x => x.id === userId);
+      return u ? `${u.name} (@${u.username})` : userId;
     }
 
     async function loadState(isManualReload = false, fromLogin = false) {
       updateDbSyncBadge('syncing', 'Sincronizando...');
       let loadedFromExternal = false;
       const token = getAuthToken();
+      if (!currentSession) currentSession = getSavedSession();
+      updateUserHeaderUI();
 
       if (!offlineMode && token) {
         try {
@@ -1502,8 +1784,8 @@
           });
 
           if (res.status === 401) {
-            updateDbSyncBadge('local', 'Senha Requerida');
-            if (!fromLogin) openAuthModal(true);
+            updateDbSyncBadge('local', 'Login Requerido');
+            if (!fromLogin) openAuthModal(true, 'Sessão expirada ou inválida. Faça login novamente.');
             return false;
           }
 
@@ -1511,21 +1793,22 @@
             const externalData = await res.json();
             if (externalData && typeof externalData === 'object' && Array.isArray(externalData.trips)) {
               state = { ...state, ...externalData };
+              ensureUsersAndOwnership();
               normalizeVisitedMaps();
               localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
               loadedFromExternal = true;
               updateDbSyncBadge('connected', 'GitHub BD Ativo');
-              if (isManualReload) {
+              if (isManualReload && !fromLogin) {
                 showToast('Sincronizado com djc_travel_planner_bd.json no GitHub!');
               }
             } else if (externalData && externalData.empty) {
-              // Arquivo ainda não existe no repositório privado: cria com o estado inicial
+              ensureUsersAndOwnership();
               normalizeVisitedMaps();
               const created = await saveState(true);
               if (created) {
                 loadedFromExternal = true;
                 updateDbSyncBadge('connected', 'GitHub BD Criado');
-                if (isManualReload) showToast('Banco djc_travel_planner_bd.json criado no GitHub!');
+                if (isManualReload && !fromLogin) showToast('Banco djc_travel_planner_bd.json criado no GitHub!');
               }
             }
           }
@@ -1547,6 +1830,7 @@
         } catch (err) {
           console.warn('Erro ao carregar localStorage:', err);
         }
+        ensureUsersAndOwnership();
         normalizeVisitedMaps();
         if (offlineMode) {
           updateDbSyncBadge('local', 'Modo Offline');
@@ -1558,13 +1842,15 @@
         }
       }
 
-      if (!state.activeTripId && state.trips.length > 0) {
-        state.activeTripId = state.trips[0].id;
+      const accessible = getAccessibleTrips();
+      if (!accessible.some(t => t.id === state.activeTripId)) {
+        state.activeTripId = accessible.length > 0 ? accessible[0].id : null;
       }
       return loadedFromExternal;
     }
 
     async function saveState(silent = false) {
+      ensureUsersAndOwnership();
       normalizeVisitedMaps();
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -1591,7 +1877,7 @@
 
         if (res.status === 401) {
           updateDbSyncBadge('local', 'Sessão Expirada');
-          openAuthModal(true);
+          openAuthModal(true, 'Sessão expirada. Entre novamente.');
           return false;
         }
 
@@ -1618,7 +1904,8 @@
     }
 
     function getActiveTrip() {
-      return state.trips.find(t => t.id === state.activeTripId) || state.trips[0] || null;
+      const accessible = getAccessibleTrips();
+      return accessible.find(t => t.id === state.activeTripId) || accessible[0] || null;
     }
 
     /* -------------------------------------------------------------
@@ -1638,7 +1925,7 @@
 
     function worldCountryStyle(feature) {
       const code = worldCountryCode(feature.properties);
-      const status = (state.visitedCountriesByPerson || {})[code];
+      const status = (getUserVisitedData().visitedCountriesByPerson || {})[code];
       let fillColor = '#dbe4ea'; // Não visitado
       if (status === 'user') fillColor = '#3b82f6';      // Azul (Você)
       else if (status === 'wife') fillColor = '#ec4899'; // Rosa (Esposa)
@@ -1692,7 +1979,7 @@
     function brazilStateStyle(feature) {
       const p = feature.properties || {};
       const uf = String(p.sigla || p.SIGLA || p.SIGLA_UF || p.uf || p.UF || (p['hc-key'] || '').split('-').pop() || '').toUpperCase();
-      const status = (state.visitedStatesByPerson || {})[uf];
+      const status = (getUserVisitedData().visitedStatesByPerson || {})[uf];
 
       let fillColor = '#dbe4ea'; // Padrão: Não visitado
       if (status === 'user') fillColor = '#3b82f6';      // Azul (Você)
@@ -1821,24 +2108,29 @@
           initBrazilLeafletMap();
           initWorldLeafletMap();
           break;
+        case 'users':
+          renderUsersView();
+          break;
         case 'about':
           break;
       }
     }
 
     function updateTopTripSelectors() {
+      const accessible = getAccessibleTrips();
       const selects = [document.getElementById('quickTripSelect'), document.getElementById('mobileTripSelect')];
       selects.forEach(sel => {
         if (!sel) return;
         sel.innerHTML = '';
-        if (state.trips.length === 0) {
+        if (accessible.length === 0) {
           sel.innerHTML = '<option value="">Nenhuma viagem</option>';
           return;
         }
-        state.trips.forEach(t => {
+        accessible.forEach(t => {
           const opt = document.createElement('option');
           opt.value = t.id;
-          opt.textContent = t.title;
+          const isShared = t.ownerId !== getCurrentUserId();
+          opt.textContent = isShared ? `🤝 ${t.title}` : t.title;
           if (t.id === state.activeTripId) opt.selected = true;
           sel.appendChild(opt);
         });
@@ -1880,18 +2172,20 @@
      * ------------------------------------------------------------- */
     function renderDashboard() {
       const trip = getActiveTrip();
+      const accessibleTrips = getAccessibleTrips();
+      const uMap = getUserVisitedData();
 
-      document.getElementById('statTotalTrips').textContent = state.trips.length;
-      const activeCount = state.trips.filter(t => t.status === 'Em Andamento').length;
+      document.getElementById('statTotalTrips').textContent = accessibleTrips.length;
+      const activeCount = accessibleTrips.filter(t => t.status === 'Em Andamento').length;
       document.getElementById('statActiveTripsCount').textContent = activeCount;
 
-      const statesCount = Object.keys(state.visitedStatesByPerson || {}).length;
+      const statesCount = Object.keys(uMap.visitedStatesByPerson || {}).length;
       document.getElementById('statStatesVisited').innerHTML = `${statesCount}<span class="text-sm font-semibold text-slate-400">/27</span>`;
       const pctStates = Math.round((statesCount / 27) * 100);
       document.getElementById('statStatesBar').style.width = `${pctStates}%`;
 
-      document.getElementById('statCountriesVisited').textContent = Object.keys(state.visitedCountriesByPerson || {}).length;
-      document.getElementById('statContinentsVisited').textContent = Object.keys(state.visitedContinentsByPerson || {}).length;
+      document.getElementById('statCountriesVisited').textContent = Object.keys(uMap.visitedCountriesByPerson || {}).length;
+      document.getElementById('statContinentsVisited').textContent = Object.keys(uMap.visitedContinentsByPerson || {}).length;
 
       if (trip && trip.expenses) {
         const estTotal = trip.expenses.reduce((acc, curr) => acc + (parseFloat(curr.estimated) || 0), 0);
@@ -1918,12 +2212,12 @@
 
       const tripListContainer = document.getElementById('dashTripList');
       tripListContainer.innerHTML = '';
-      if (state.trips.length === 0) {
-        tripListContainer.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs">Nenhuma viagem cadastrada. Clique em "Nova Viagem" para começar!</div>';
+      if (accessibleTrips.length === 0) {
+        tripListContainer.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs">Nenhuma viagem cadastrada ou compartilhada com você. Clique em "Nova Viagem" para começar!</div>';
         return;
       }
 
-      state.trips.forEach(t => {
+      accessibleTrips.forEach(t => {
         const isCurrent = t.id === state.activeTripId;
         const card = document.createElement('div');
         card.className = `p-3.5 rounded-xl border flex items-center justify-between transition cursor-pointer ${
@@ -1974,7 +2268,7 @@
       const grid = document.getElementById('tripsGrid');
       grid.innerHTML = '';
 
-      let list = state.trips;
+      let list = getAccessibleTrips();
       if (currentTripFilter !== 'all') {
         list = list.filter(t => t.status === currentTripFilter);
       }
@@ -2006,8 +2300,13 @@
           <div>
             <div class="h-40 bg-cover bg-center relative" style="background-image: url('${coverUrl(trip, fallback)}')">
               <div class="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-black/20"></div>
-              <div class="absolute top-3 left-3">
+              <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${getStatusBadgeClass(trip.status)}">${trip.status}</span>
+                ${trip.ownerId !== getCurrentUserId()
+                  ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/90 text-white shadow-sm"><i class="fa-solid fa-handshake mr-1"></i>Compartilhada</span>`
+                  : ((trip.sharedWith && trip.sharedWith.length > 0)
+                    ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/90 text-navy-950 shadow-sm"><i class="fa-solid fa-users mr-1"></i>+${trip.sharedWith.length}</span>`
+                    : '')}
               </div>
               <div class="absolute top-3 right-3 flex space-x-1">
                 <button onclick="openTripModal('${trip.id}')" title="Editar" class="w-7 h-7 rounded-lg bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm flex items-center justify-center text-xs transition">
@@ -2059,17 +2358,18 @@
       const form = document.getElementById('tripForm');
       form.reset();
 
+      let currentTripObj = null;
       if (tripId) {
-        const trip = state.trips.find(t => t.id === tripId);
-        if (trip) {
+        currentTripObj = state.trips.find(t => t.id === tripId);
+        if (currentTripObj) {
           document.getElementById('tripModalTitle').textContent = 'Editar Viagem';
-          document.getElementById('tripIdInput').value = trip.id;
-          document.getElementById('tripTitleInput').value = trip.title;
-          document.getElementById('tripStartInput').value = trip.startDate;
-          document.getElementById('tripEndInput').value = trip.endDate;
-          document.getElementById('tripTypeInput').value = trip.type;
-          document.getElementById('tripStatusInput').value = trip.status;
-          document.getElementById('tripImageInput').value = (trip.coverImage && !trip.coverImage.startsWith('idb:')) ? trip.coverImage : '';
+          document.getElementById('tripIdInput').value = currentTripObj.id;
+          document.getElementById('tripTitleInput').value = currentTripObj.title;
+          document.getElementById('tripStartInput').value = currentTripObj.startDate;
+          document.getElementById('tripEndInput').value = currentTripObj.endDate;
+          document.getElementById('tripTypeInput').value = currentTripObj.type;
+          document.getElementById('tripStatusInput').value = currentTripObj.status;
+          document.getElementById('tripImageInput').value = (currentTripObj.coverImage && !currentTripObj.coverImage.startsWith('idb:')) ? currentTripObj.coverImage : '';
         }
       } else {
         document.getElementById('tripModalTitle').textContent = 'Nova Viagem';
@@ -2078,6 +2378,7 @@
         document.getElementById('tripStartInput').value = today;
         document.getElementById('tripEndInput').value = today;
       }
+      renderTripShareCheckboxes(currentTripObj);
       refreshTripCoverPreview(tripId);
       modal.classList.remove('hidden');
     }
@@ -2108,9 +2409,12 @@
         return;
       }
 
+      const selectedShared = Array.from(document.querySelectorAll('.trip-share-checkbox:checked')).map(cb => cb.value);
+
       if (id) {
         const index = state.trips.findIndex(t => t.id === id);
         if (index !== -1) {
+          const canShare = canManageTripSharing(state.trips[index]);
           state.trips[index] = {
             ...state.trips[index],
             title,
@@ -2118,6 +2422,7 @@
             endDate,
             type,
             status,
+            sharedWith: canShare ? selectedShared : (state.trips[index].sharedWith || []),
             coverImage: resolveEditedCover(state.trips[index].coverImage, coverImage, state.trips[index].coverCloudPath)
           };
           showToast('Viagem atualizada com sucesso!');
@@ -2125,6 +2430,8 @@
       } else {
         const newTrip = {
           id: 'trip-' + Date.now(),
+          ownerId: getCurrentUserId(),
+          sharedWith: selectedShared,
           title,
           startDate,
           endDate,
@@ -2153,11 +2460,17 @@
       const trip = state.trips.find(t => t.id === tripId);
       if (!trip) return;
 
+      if (trip.ownerId && trip.ownerId !== getCurrentUserId() && !isCurrentUserAdmin()) {
+        showToast('Apenas o criador da viagem pode excluí-la.', 'error');
+        return;
+      }
+
       showCustomConfirmModal(`Tem certeza que deseja excluir a viagem "${trip.title}"?`, () => {
         purgeTripFiles(trip);
         state.trips = state.trips.filter(t => t.id !== tripId);
         if (state.activeTripId === tripId) {
-          state.activeTripId = state.trips.length > 0 ? state.trips[0].id : null;
+          const accessible = getAccessibleTrips();
+          state.activeTripId = accessible.length > 0 ? accessible[0].id : null;
         }
         saveState();
         renderCurrentView();
@@ -2772,7 +3085,7 @@
      * 6. SCRATCH MAP (BRASIL & MUNDO) COM DUAS PESSOAS
      * ------------------------------------------------------------- */
     function renderBrazilMap() {
-      const visitedMap = state.visitedStatesByPerson || {};
+      const visitedMap = getUserVisitedData().visitedStatesByPerson || {};
       const values = Object.values(visitedMap);
       const count = values.length;
       const pct = Math.round((count / 27) * 100);
@@ -2805,7 +3118,7 @@
 
     function renderStatesList() {
       const listContainer = document.getElementById('brazilStatesList');
-      const visitedMap = state.visitedStatesByPerson || {};
+      const visitedMap = getUserVisitedData().visitedStatesByPerson || {};
       const query = (document.getElementById('stateSearchInput')?.value || '').toLowerCase();
 
       listContainer.innerHTML = '';
@@ -2858,20 +3171,20 @@
     }
 
     function toggleStateVisited(uf) {
-      if (!state.visitedStatesByPerson) state.visitedStatesByPerson = {};
-      const current = state.visitedStatesByPerson[uf];
+      const _uMapSt = getUserVisitedData(); if (!_uMapSt.visitedStatesByPerson) _uMapSt.visitedStatesByPerson = {};
+      const current = getUserVisitedData().visitedStatesByPerson[uf];
 
       if (!current) {
-        state.visitedStatesByPerson[uf] = 'user';   // 1º Clique: Azul (Você)
+        getUserVisitedData().visitedStatesByPerson[uf] = 'user';   // 1º Clique: Azul (Você)
         showToast(`${uf}: Marcado para você (Azul).`);
       } else if (current === 'user') {
-        state.visitedStatesByPerson[uf] = 'wife';   // 2º Clique: Rosa (Esposa)
+        getUserVisitedData().visitedStatesByPerson[uf] = 'wife';   // 2º Clique: Rosa (Esposa)
         showToast(`${uf}: Marcado para sua esposa (Rosa).`);
       } else if (current === 'wife') {
-        state.visitedStatesByPerson[uf] = 'both';   // 3º Clique: Verde (Ambos)
+        getUserVisitedData().visitedStatesByPerson[uf] = 'both';   // 3º Clique: Verde (Ambos)
         showToast(`${uf}: Marcado para ambos (Verde)!`);
       } else {
-        delete state.visitedStatesByPerson[uf];     // 4º Clique: Remove
+        delete getUserVisitedData().visitedStatesByPerson[uf];     // 4º Clique: Remove
         showToast(`${uf}: Desmarcado.`);
       }
 
@@ -2881,7 +3194,7 @@
 
     function clearBrazilMap() {
       showCustomConfirmModal('Deseja limpar todos os estados visitados do Brasil?', () => {
-        state.visitedStatesByPerson = {};
+        getUserVisitedData().visitedStatesByPerson = {};
         saveState();
         renderBrazilMap();
         showToast('Estados reiniciados.');
@@ -2890,26 +3203,26 @@
 
     /* WORLD SCRATCH MAP (COM PADRÃO VOCÊ / ESPOSA / AMBOS) */
     function syncContinentFromCountries(continentId) {
-      if (!state.visitedContinentsByPerson) state.visitedContinentsByPerson = {};
+      const _uMapCt = getUserVisitedData(); if (!_uMapCt.visitedContinentsByPerson) _uMapCt.visitedContinentsByPerson = {};
       const countriesInCont = WORLD_COUNTRIES.filter(c => c.continent === continentId);
       const statuses = countriesInCont
-        .map(c => (state.visitedCountriesByPerson || {})[c.id])
+        .map(c => (getUserVisitedData().visitedCountriesByPerson || {})[c.id])
         .filter(Boolean);
 
       if (statuses.length === 0) {
-        delete state.visitedContinentsByPerson[continentId];
+        delete getUserVisitedData().visitedContinentsByPerson[continentId];
       } else if (statuses.includes('both') || (statuses.includes('user') && statuses.includes('wife'))) {
-        state.visitedContinentsByPerson[continentId] = 'both';
+        getUserVisitedData().visitedContinentsByPerson[continentId] = 'both';
       } else if (statuses.includes('user')) {
-        state.visitedContinentsByPerson[continentId] = 'user';
+        getUserVisitedData().visitedContinentsByPerson[continentId] = 'user';
       } else if (statuses.includes('wife')) {
-        state.visitedContinentsByPerson[continentId] = 'wife';
+        getUserVisitedData().visitedContinentsByPerson[continentId] = 'wife';
       }
     }
 
     function renderWorldSection() {
-      const countriesMap = state.visitedCountriesByPerson || {};
-      const continentsMap = state.visitedContinentsByPerson || {};
+      const countriesMap = getUserVisitedData().visitedCountriesByPerson || {};
+      const continentsMap = getUserVisitedData().visitedContinentsByPerson || {};
       const countryValues = Object.values(countriesMap);
       const visitedCount = countryValues.length;
       const continentsCount = Object.keys(continentsMap).length;
@@ -2963,7 +3276,7 @@
     function renderWorldCountriesAccordion() {
       const container = document.getElementById('worldCountriesAccordion');
       const query = (document.getElementById('countrySearchInput')?.value || '').toLowerCase();
-      const countriesMap = state.visitedCountriesByPerson || {};
+      const countriesMap = getUserVisitedData().visitedCountriesByPerson || {};
 
       container.innerHTML = '';
 
@@ -3024,22 +3337,22 @@
     }
 
     function toggleContinentVisited(continentId) {
-      if (!state.visitedContinentsByPerson) state.visitedContinentsByPerson = {};
-      const current = state.visitedContinentsByPerson[continentId];
+      const _uMapCt = getUserVisitedData(); if (!_uMapCt.visitedContinentsByPerson) _uMapCt.visitedContinentsByPerson = {};
+      const current = getUserVisitedData().visitedContinentsByPerson[continentId];
       const contObj = WORLD_CONTINENTS.find(c => c.id === continentId);
       const label = contObj?.name || 'Continente';
 
       if (!current) {
-        state.visitedContinentsByPerson[continentId] = 'user';
+        getUserVisitedData().visitedContinentsByPerson[continentId] = 'user';
         showToast(`${label}: Marcado para você (Azul).`);
       } else if (current === 'user') {
-        state.visitedContinentsByPerson[continentId] = 'wife';
+        getUserVisitedData().visitedContinentsByPerson[continentId] = 'wife';
         showToast(`${label}: Marcado para sua esposa (Rosa).`);
       } else if (current === 'wife') {
-        state.visitedContinentsByPerson[continentId] = 'both';
+        getUserVisitedData().visitedContinentsByPerson[continentId] = 'both';
         showToast(`${label}: Marcado para ambos (Verde)!`);
       } else {
-        delete state.visitedContinentsByPerson[continentId];
+        delete getUserVisitedData().visitedContinentsByPerson[continentId];
         showToast(`${label}: Desmarcado.`);
       }
       saveState();
@@ -3047,22 +3360,22 @@
     }
 
     function toggleCountryVisited(countryId) {
-      if (!state.visitedCountriesByPerson) state.visitedCountriesByPerson = {};
+      const _uMapCo = getUserVisitedData(); if (!_uMapCo.visitedCountriesByPerson) _uMapCo.visitedCountriesByPerson = {};
       const cObj = WORLD_COUNTRIES.find(c => c.id === countryId);
       const name = cObj?.name || countryId.toUpperCase();
-      const current = state.visitedCountriesByPerson[countryId];
+      const current = getUserVisitedData().visitedCountriesByPerson[countryId];
 
       if (!current) {
-        state.visitedCountriesByPerson[countryId] = 'user';   // 1º Clique: Azul (Você)
+        getUserVisitedData().visitedCountriesByPerson[countryId] = 'user';   // 1º Clique: Azul (Você)
         showToast(`${name}: Marcado para você (Azul).`);
       } else if (current === 'user') {
-        state.visitedCountriesByPerson[countryId] = 'wife';   // 2º Clique: Rosa (Esposa)
+        getUserVisitedData().visitedCountriesByPerson[countryId] = 'wife';   // 2º Clique: Rosa (Esposa)
         showToast(`${name}: Marcado para sua esposa (Rosa).`);
       } else if (current === 'wife') {
-        state.visitedCountriesByPerson[countryId] = 'both';   // 3º Clique: Verde (Ambos)
+        getUserVisitedData().visitedCountriesByPerson[countryId] = 'both';   // 3º Clique: Verde (Ambos)
         showToast(`${name}: Marcado para ambos (Verde)! ✈️`);
       } else {
-        delete state.visitedCountriesByPerson[countryId];     // 4º Clique: Remove
+        delete getUserVisitedData().visitedCountriesByPerson[countryId];     // 4º Clique: Remove
         showToast(`${name}: Desmarcado.`);
       }
 
@@ -3077,8 +3390,8 @@
 
     function clearWorldMap() {
       showCustomConfirmModal('Resetar todos os continentes e países visitados?', () => {
-        state.visitedCountriesByPerson = {};
-        state.visitedContinentsByPerson = {};
+        getUserVisitedData().visitedCountriesByPerson = {};
+        getUserVisitedData().visitedContinentsByPerson = {};
         saveState();
         renderWorldSection();
         renderWorldMapStyles();
@@ -4312,6 +4625,284 @@
         }
       };
       reader.readAsText(file);
+    }
+
+
+    /* -------------------------------------------------------------
+     * GERENCIAMENTO DE USUÁRIOS (ADMIN) & COMPARTILHAMENTO
+     * ------------------------------------------------------------- */
+    function renderTripShareCheckboxes(trip) {
+      const container = document.getElementById('tripShareUsersList');
+      const section = document.getElementById('tripSharingSection');
+      const ownerBadge = document.getElementById('tripOwnerBadge');
+      if (!container || !section) return;
+
+      ensureUsersAndOwnership();
+      const ownerId = trip ? (trip.ownerId || 'admin') : getCurrentUserId();
+      const sharedList = trip && Array.isArray(trip.sharedWith) ? trip.sharedWith : [];
+      const canEditSharing = !trip || canManageTripSharing(trip);
+
+      if (ownerBadge) {
+        ownerBadge.textContent = `Criador: ${getUserDisplayName(ownerId)}`;
+      }
+
+      // Lista todos os usuários possíveis (admin + usuários criados), exceto o próprio criador da viagem
+      const allCandidates = [
+        { id: 'admin', name: 'Administrador (Principal)', username: 'admin', active: true },
+        ...(state.users || [])
+      ].filter(u => u.id !== ownerId);
+
+      if (allCandidates.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 italic py-1">Nenhuma outra família/usuário cadastrado ainda. O administrador pode criar novos usuários na aba "Usuários".</p>';
+        return;
+      }
+
+      container.innerHTML = allCandidates.map(u => {
+        const checked = sharedList.includes(u.id) ? 'checked' : '';
+        const disabled = canEditSharing ? '' : 'disabled';
+        return `
+          <label class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200/80 ${canEditSharing ? 'hover:border-teal-400 cursor-pointer' : 'opacity-70'} transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <input type="checkbox" value="${escHtml(u.id)}" ${checked} ${disabled} class="trip-share-checkbox w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500" />
+              <div class="truncate">
+                <span class="text-xs font-bold text-slate-800 block truncate">${escHtml(u.name)}</span>
+                <span class="text-[10px] text-slate-400">@${escHtml(u.username)} ${u.active === false ? '• (Inativo)' : ''}</span>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${checked ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-400'}">
+              ${checked ? 'Autorizado' : 'Sem acesso'}
+            </span>
+          </label>
+        `;
+      }).join('');
+    }
+
+    function renderUsersView() {
+      if (!isCurrentUserAdmin()) {
+        switchTab('dashboard');
+        return;
+      }
+      ensureUsersAndOwnership();
+      const grid = document.getElementById('usersGrid');
+      if (!grid) return;
+
+      const users = state.users || [];
+      let cardsHtml = `
+        <!-- Card Fixo do Administrador -->
+        <div class="bg-white rounded-2xl p-5 border-2 border-amber-400/70 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                <i class="fa-solid fa-crown mr-1"></i> Administrador Mestre
+              </span>
+              <span class="text-[11px] font-bold text-emerald-600">● Ativo</span>
+            </div>
+            <h4 class="text-base font-extrabold text-navy-900">Administrador Principal</h4>
+            <p class="text-xs text-slate-500 mt-0.5">Login: <code class="font-bold text-slate-700">admin</code></p>
+            <div class="mt-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600">
+              Senha definida na variável <code class="text-teal-700 font-semibold">APP_PASSWORD</code> da Vercel.
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
+            <span>Viagens próprias: <strong>${(state.trips || []).filter(t => t.ownerId === 'admin').length}</strong></span>
+            <span>Acesso total</span>
+          </div>
+        </div>
+      `;
+
+      users.forEach(u => {
+        const isPwdVisible = Boolean(visiblePasswordsMap[u.id]);
+        const ownedCount = (state.trips || []).filter(t => t.ownerId === u.id).length;
+        const sharedCount = (state.trips || []).filter(t => Array.isArray(t.sharedWith) && t.sharedWith.includes(u.id)).length;
+
+        cardsHtml += `
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${u.active !== false ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-500'}">
+                  <i class="fa-solid fa-users mr-1"></i> Usuário / Família
+                </span>
+                <div class="flex items-center space-x-1">
+                  <button onclick="openUserModal('${escHtml(u.id)}')" title="Editar usuário / senha" class="p-1.5 text-slate-400 hover:text-teal-600 rounded-lg hover:bg-slate-100 text-xs transition">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button onclick="deleteUser('${escHtml(u.id)}')" title="Excluir usuário" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 text-xs transition">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <h4 class="text-base font-extrabold text-navy-900 truncate">${escHtml(u.name)}</h4>
+              <p class="text-xs text-slate-500 mt-0.5">Login: <code class="font-bold text-navy-900 bg-slate-100 px-1.5 py-0.5 rounded">${escHtml(u.username)}</code></p>
+
+              <!-- Senha com opção de visualizar / copiar -->
+              <div class="mt-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Senha de Acesso</span>
+                  <span class="text-xs font-mono font-bold text-slate-800 truncate block">${isPwdVisible ? escHtml(u.password) : '••••••••••'}</span>
+                </div>
+                <div class="flex items-center space-x-1 flex-shrink-0">
+                  <button type="button" onclick="toggleUserPasswordView('${escHtml(u.id)}')" title="${isPwdVisible ? 'Ocultar senha' : 'Visualizar senha'}" class="w-7 h-7 rounded-lg bg-white border border-slate-200 hover:border-teal-500 text-slate-600 flex items-center justify-center text-xs transition">
+                    <i class="fa-solid ${isPwdVisible ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                  </button>
+                  <button type="button" onclick="copyUserCredentials('${escHtml(u.id)}')" title="Copiar login e senha para enviar" class="w-7 h-7 rounded-lg bg-white border border-slate-200 hover:border-teal-500 text-teal-600 flex items-center justify-center text-xs transition">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
+              <span>Próprias: <strong class="text-navy-900">${ownedCount}</strong> • Compartilhadas: <strong class="text-teal-700">${sharedCount}</strong></span>
+              <span class="font-bold ${u.active !== false ? 'text-emerald-600' : 'text-rose-500'}">${u.active !== false ? '● Ativo' : '● Bloqueado'}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      grid.innerHTML = cardsHtml;
+    }
+
+    function toggleUserPasswordView(userId) {
+      visiblePasswordsMap[userId] = !visiblePasswordsMap[userId];
+      renderUsersView();
+    }
+
+    async function copyUserCredentials(userId) {
+      const u = (state.users || []).find(x => x.id === userId);
+      if (!u) return;
+      const appUrl = window.location.origin;
+      const text = `Acesso Kisuco Planner (${u.name})
+Link: ${appUrl}
+Login: ${u.username}
+Senha: ${u.password}`;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (__) {}
+        ta.remove();
+      }
+      showToast('Link, login e senha copiados para enviar!');
+    }
+
+    function generateRandomUserPassword() {
+      const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+      let pwd = '';
+      for (let i = 0; i < 8; i++) {
+        pwd += chars[Math.floor(Math.random() * chars.length)];
+      }
+      const inp = document.getElementById('userPasswordInput');
+      if (inp) inp.value = pwd;
+    }
+
+    function openUserModal(userId = null) {
+      if (!isCurrentUserAdmin()) return;
+      const modal = document.getElementById('userModal');
+      const form = document.getElementById('userForm');
+      form.reset();
+
+      if (userId) {
+        const u = (state.users || []).find(x => x.id === userId);
+        if (!u) return;
+        document.getElementById('userModalTitle').textContent = 'Editar Usuário';
+        document.getElementById('userEditIdInput').value = u.id;
+        document.getElementById('userNameInput').value = u.name || '';
+        document.getElementById('userLoginInput').value = u.username || '';
+        document.getElementById('userPasswordInput').value = u.password || '';
+        document.getElementById('userActiveInput').checked = u.active !== false;
+      } else {
+        document.getElementById('userModalTitle').textContent = 'Novo Usuário / Família';
+        document.getElementById('userEditIdInput').value = '';
+        document.getElementById('userActiveInput').checked = true;
+        generateRandomUserPassword();
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeUserModal() {
+      document.getElementById('userModal').classList.add('hidden');
+    }
+
+    async function saveUserForm(event) {
+      event.preventDefault();
+      if (!isCurrentUserAdmin()) return;
+      ensureUsersAndOwnership();
+
+      const editId = document.getElementById('userEditIdInput').value;
+      const name = document.getElementById('userNameInput').value.trim();
+      const username = document.getElementById('userLoginInput').value.trim().toLowerCase().replace(/\s+/g, '');
+      const password = document.getElementById('userPasswordInput').value.trim();
+      const active = document.getElementById('userActiveInput').checked;
+
+      if (!name || !username || !password) {
+        showToast('Preencha nome, login e senha.', 'error');
+        return;
+      }
+
+      if (username === 'admin') {
+        showToast('O login "admin" é reservado ao administrador.', 'error');
+        return;
+      }
+
+      const duplicate = (state.users || []).find(u => u.username === username && u.id !== editId);
+      if (duplicate) {
+        showToast('Já existe um usuário com esse login!', 'error');
+        return;
+      }
+
+      if (editId) {
+        const idx = state.users.findIndex(u => u.id === editId);
+        if (idx !== -1) {
+          state.users[idx] = {
+            ...state.users[idx],
+            name,
+            username,
+            password,
+            active
+          };
+          showToast('Usuário e senha atualizados!');
+        }
+      } else {
+        const newUser = {
+          id: 'usr-' + Date.now().toString(36),
+          name,
+          username,
+          password,
+          active,
+          createdAt: new Date().toISOString()
+        };
+        state.users.push(newUser);
+        visiblePasswordsMap[newUser.id] = true;
+        showToast(`Usuário "${name}" criado com sucesso!`);
+      }
+
+      await saveState();
+      closeUserModal();
+      renderUsersView();
+    }
+
+    function deleteUser(userId) {
+      if (!isCurrentUserAdmin()) return;
+      const u = (state.users || []).find(x => x.id === userId);
+      if (!u) return;
+
+      showCustomConfirmModal(`Excluir o usuário "${u.name}" (@${u.username})? Ele perderá o acesso ao aplicativo.`, async () => {
+        state.users = (state.users || []).filter(x => x.id !== userId);
+        // Remove compartilhamentos vinculados a este usuário
+        (state.trips || []).forEach(t => {
+          if (Array.isArray(t.sharedWith)) {
+            t.sharedWith = t.sharedWith.filter(id => id !== userId);
+          }
+        });
+        await saveState();
+        renderUsersView();
+        showToast('Usuário removido.');
+      });
     }
 
     /* -------------------------------------------------------------
