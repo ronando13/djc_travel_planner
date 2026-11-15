@@ -164,6 +164,53 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Não autorizado. Faça login novamente.' });
   }
 
+  // -----------------------------------------------------------
+  // 0.5 ALTERAR PRÓPRIA SENHA (USUÁRIO COMUM)
+  // -----------------------------------------------------------
+  if (action === 'change-password' && req.method === 'POST') {
+    try {
+      if (sessionUser.isAdmin) {
+        return res.status(400).json({ error: 'A senha do administrador deve ser alterada na Vercel (APP_PASSWORD).' });
+      }
+
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const currentPassword = String(body?.currentPassword || '').trim();
+      const newPassword = String(body?.newPassword || '').trim();
+
+      if (!currentPassword || !newPassword || newPassword.length < 4) {
+        return res.status(400).json({ error: 'Informe a senha atual e uma nova senha com pelo menos 4 caracteres.' });
+      }
+
+      const dbResult = await readDbFromGithub();
+      if (dbResult.notFound || !dbResult.data || !Array.isArray(dbResult.data.users)) {
+        return res.status(404).json({ error: 'Banco de usuários não encontrado.' });
+      }
+
+      const idx = dbResult.data.users.findIndex(u => u.id === sessionUser.id);
+      if (idx === -1) {
+        return res.status(404).json({ error: 'Usuário não encontrado.' });
+      }
+
+      const userRecord = dbResult.data.users[idx];
+      if (String(userRecord.password || '') !== currentPassword) {
+        return res.status(401).json({ error: 'Senha atual incorreta.' });
+      }
+
+      // Atualiza a senha no array users do djc_travel_planner_bd.json (permanece visível para o admin)
+      dbResult.data.users[idx] = {
+        ...userRecord,
+        password: newPassword,
+        passwordUpdatedAt: new Date().toISOString()
+      };
+
+      await writeDbToGithub(dbResult.data, dbResult.sha);
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error('Erro ao alterar senha do usuário:', err);
+      return res.status(500).json({ error: 'Erro interno ao salvar nova senha.' });
+    }
+  }
+
   function sanitizeAttachmentPath(rawPath) {
     const clean = String(rawPath || '').replace(/^\/+/, '').trim();
     if (!clean.startsWith('anexos/') || clean.includes('..')) return null;
