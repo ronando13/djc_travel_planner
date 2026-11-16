@@ -376,21 +376,23 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-bold text-navy-900">Minhas Viagens</h2>
-          <p class="text-xs sm:text-sm text-slate-500">Crie, planeje e gerencie todos os seus roteiros sincronizados em <code class="text-teal-700 font-semibold">djc_travel_planner_bd.json</code>.</p>
+          <p class="text-xs sm:text-sm text-slate-500" id="tripsSubTitle">Crie, planeje e gerencie todos os seus roteiros sincronizados em <code class="text-teal-700 font-semibold">djc_travel_planner_bd.json</code>.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <!-- Reload External DB -->
           <button onclick="reloadExternalDB()" title="Recarregar dados de djc_travel_planner_bd.json" class="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition">
             <i class="fa-solid fa-rotate mr-1 text-teal-600"></i> Recarregar BD
           </button>
-          <!-- Backup / Restore -->
-          <button onclick="exportData()" title="Baixar arquivo djc_travel_planner_bd.json" class="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition">
-            <i class="fa-solid fa-download mr-1"></i> Exportar BD
-          </button>
-          <label class="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition cursor-pointer">
-            <i class="fa-solid fa-upload mr-1"></i> Importar BD
-            <input type="file" id="importFileInput" onchange="importData(event)" class="hidden" accept=".json" />
-          </label>
+          <!-- Backup / Restore (Admin only) -->
+          <div id="adminExportImportGroup" class="hidden flex items-center gap-2">
+            <button onclick="exportData()" title="Baixar arquivo de backup do banco" class="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition">
+              <i class="fa-solid fa-download mr-1"></i> Exportar BD
+            </button>
+            <label class="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition cursor-pointer">
+              <i class="fa-solid fa-upload mr-1"></i> Importar BD
+              <input type="file" id="importFileInput" onchange="importData(event)" class="hidden" accept=".json" />
+            </label>
+          </div>
           <button onclick="openTripModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow transition flex items-center">
             <i class="fa-solid fa-plus mr-1.5"></i> Nova Viagem
           </button>
@@ -587,13 +589,15 @@
           <p class="text-xs sm:text-sm text-slate-500">Passagens, recibos, endereços e fotos da hospedagem, fotos de passeios e a capa da viagem.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button onclick="exportFullBackup()" title="Baixa um arquivo com os dados e todos os anexos" class="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition">
-            <i class="fa-solid fa-download mr-1"></i> Backup completo
-          </button>
-          <label class="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition cursor-pointer">
-            <i class="fa-solid fa-upload mr-1"></i> Restaurar backup
-            <input type="file" accept=".json" class="hidden" onchange="importFullBackup(event)" />
-          </label>
+          <div id="adminFullBackupGroup" class="hidden flex items-center gap-2">
+            <button onclick="exportFullBackup()" title="Baixa um arquivo com os dados e todos os anexos" class="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition">
+              <i class="fa-solid fa-download mr-1"></i> Backup completo
+            </button>
+            <label class="px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl border border-slate-200 shadow-sm transition cursor-pointer">
+              <i class="fa-solid fa-upload mr-1"></i> Restaurar backup
+              <input type="file" accept=".json" class="hidden" onchange="importFullBackup(event)" />
+            </label>
+          </div>
           <button onclick="openAttModal('passagens')" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow transition flex items-center">
             <i class="fa-solid fa-plus mr-1.5"></i> Novo Anexo
           </button>
@@ -1676,12 +1680,12 @@
     let visiblePasswordsMap = {}; // { userId: true/false }
 
     function getAuthToken() {
-      return localStorage.getItem(AUTH_TOKEN_KEY) || '';
+      return sessionStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY) || '';
     }
 
     function getSavedSession() {
       try {
-        const raw = localStorage.getItem(AUTH_USER_KEY);
+        const raw = sessionStorage.getItem(AUTH_USER_KEY) || localStorage.getItem(AUTH_USER_KEY);
         return raw ? JSON.parse(raw) : null;
       } catch (_) {
         return null;
@@ -1734,6 +1738,18 @@
       if (navUsers) navUsers.classList.toggle('hidden', !showAdmin);
       if (mobileNavUsers) mobileNavUsers.classList.toggle('hidden', !showAdmin);
       if (mobileChangePwd) mobileChangePwd.classList.toggle('hidden', !isRegularUser);
+
+      const adminExportGroup = document.getElementById('adminExportImportGroup');
+      const adminBackupGroup = document.getElementById('adminFullBackupGroup');
+      const tripsSub = document.getElementById('tripsSubTitle');
+
+      if (adminExportGroup) adminExportGroup.classList.toggle('hidden', !showAdmin);
+      if (adminBackupGroup) adminBackupGroup.classList.toggle('hidden', !showAdmin);
+      if (tripsSub) {
+        tripsSub.innerHTML = showAdmin
+          ? 'Crie, planeje e gerencie todos os seus roteiros sincronizados em <code class="text-teal-700 font-semibold">djc_travel_planner_bd.json</code>.'
+          : 'Crie, planeje e gerencie todos os seus roteiros sincronizados na nuvem.';
+      }
     }
 
     /* Detecção automática de formato de dispositivo / viewport (Mobile vs Tablet vs Desktop) */
@@ -1935,8 +1951,10 @@
           isAdmin: Boolean(data.user.isAdmin),
           token: data.token
         };
-        localStorage.setItem(AUTH_TOKEN_KEY, data.token);
-        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentSession));
+        sessionStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentSession));
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        localStorage.removeItem(AUTH_USER_KEY);
         offlineMode = false;
 
         await loadState(true, true);
@@ -1971,10 +1989,12 @@
       updateUserHeaderUI();
       closeAuthModal();
       updateDbSyncBadge('local', 'Modo Offline');
-      showToast('Operando em cache local (sem sincronizar com GitHub).');
+      showToast('Operando em modo offline.');
     }
 
     function logoutAuth() {
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+      sessionStorage.removeItem(AUTH_USER_KEY);
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem(AUTH_USER_KEY);
       currentSession = null;
@@ -2073,7 +2093,7 @@
               loadedFromExternal = true;
               updateDbSyncBadge('connected', 'GitHub BD Ativo');
               if (isManualReload && !fromLogin) {
-                showToast('Sincronizado com djc_travel_planner_bd.json no GitHub!');
+                showToast('Sincronizado com a nuvem com sucesso!');
               }
             } else if (externalData && externalData.empty) {
               ensureUsersAndOwnership();
@@ -2082,7 +2102,7 @@
               if (created) {
                 loadedFromExternal = true;
                 updateDbSyncBadge('connected', 'GitHub BD Criado');
-                if (isManualReload && !fromLogin) showToast('Banco djc_travel_planner_bd.json criado no GitHub!');
+                if (isManualReload && !fromLogin) showToast('Banco criado na nuvem com sucesso!');
               }
             }
           }
@@ -3703,7 +3723,7 @@
             normalizeVisitedMaps();
             await saveState();
             renderCurrentView();
-            showToast('Dados importados e sincronizados em djc_travel_planner_bd.json!');
+            showToast('Dados importados e sincronizados com sucesso!');
           } else {
             showToast('Arquivo JSON inválido!', 'error');
           }
