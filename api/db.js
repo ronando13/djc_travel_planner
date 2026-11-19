@@ -88,6 +88,8 @@ function formatDateBR(iso) {
   return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
+const ONLINE_WINDOW_MS = 7 * 60 * 1000; // cliente avisa a cada 5 min
+
 // Cache curto (15 s) só da lista de usuários, para validar o acesso em toda requisição
 // sem consultar o GitHub a cada miniatura/anexo.
 let accessCache = { at: 0, users: null };
@@ -117,6 +119,40 @@ export default async function handler(req, res) {
 
   const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${DB_FILE_PATH}`;
   const action = String(req.query?.action || '');
+
+  const PRESENCE_FILE_PATH = process.env.PRESENCE_FILE_PATH || 'djc_travel_planner_presence.json';
+  const presenceUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${PRESENCE_FILE_PATH}`;
+
+  async function readPresence() {
+    const r = await fetch(`${presenceUrl}?ref=${encodeURIComponent(GITHUB_BRANCH)}`, { headers: ghHeaders });
+    if (r.status === 404) return { sha: undefined, data: { users: {} } };
+    if (!r.ok) throw new Error(`presence GET ${r.status}`);
+    const f = await r.json();
+    let data = {};
+    try { data = JSON.parse(Buffer.from(f.content || '', 'base64').toString('utf-8')); } catch (_) {}
+    if (!data.users || typeof data.users !== 'object') data.users = {};
+    return { sha: f.sha, data };
+  }
+
+  // fn(prev) devolve o novo registro, ou null para não gravar
+  async function updatePresence(userId, fn) {
+    for (let i = 0; i < 3; i++) {
+      const { sha, data } = await readPresence();
+      const next = fn(data.users[userId] || {});
+      if (next === null) return 'skipped';
+      data.users[userId] = next;
+      const body = {
+        message: 'chore(uso): atualiza presença',
+        content: Buffer.from(JSON.stringify(data, null, 2), 'utf-8').toString('base64'),
+        branch: GITHUB_BRANCH
+      };
+      if (sha) body.sha = sha;
+      const r = await fetch(presenceUrl, { method: 'PUT', headers: { ...ghHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) return 'saved';
+      if (r.status !== 409 && r.status !== 422) throw new Error(`presence PUT ${r.status}`);
+    }
+    return 'conflict';
+  }
 
   async function readDbFromGithub() {
     const ghRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(GITHUB_BRANCH)}`, {
@@ -215,6 +251,10 @@ export default async function handler(req, res) {
         ? Math.min(Date.now() + 30 * DAY_MS, Date.parse(access.expiresAt))
         : Date.now() + 30 * DAY_MS;
       const token = signToken({ ...userPayload, exp: tokenExp }, APP_PASSWORD);
+      try {
+        const iso = new Date().toISOString();
+        await updatePresence(foundUser.id, p => ({ ...p, lastLoginAt: iso, lastSeenAt: iso, sessions: (p.sessions || 0) + 1, totalMs: p.totalMs || 0 }));
+      } catch (e) { console.error('Falha ao registrar login:', e.message); }
       return res.status(200).json({ ok: true, token, user: userPayload, access });
     } catch (err) {
       console.error('Erro no login:', err);
@@ -268,6 +308,21 @@ export default async function handler(req, res) {
       user: { id: sessionUser.id, username: sessionUser.username, name: sessionUser.name, isAdmin: Boolean(sessionUser.isAdmin) },
       access: sessionAccess
     });
+  }
+
+  if (action === 'ping' && req.method === 'POST') {
+    if (!sessionUser.isAdmin) {
+      try {
+        const b = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+        const add = Math.min(Math.max(Number(b.activeMs) || 0, 0), 6 * 60 * 1000);
+        await updatePresence(sessionUser.id, p => {
+          const last = p.lastSeenAt ? Date.parse(p.lastSeenAt) : 0;
+          if (Date.now() - last < 60000) return null; // evita excesso de gravações
+          return { ...p, lastSeenAt: new Date().toISOString(), sessions: p.sessions || 1, totalMs: (p.totalMs || 0) + add };
+        });
+      } catch (e) { console.error('Falha no ping:', e.message); }
+    }
+    return res.status(200).json({ ok: true });
   }
 
   // -----------------------------------------------------------
@@ -324,6 +379,36 @@ export default async function handler(req, res) {
   }
 
   try {
+    // -----------------------------------------------------------
+    // 0.7 PAINEL DO ADMINISTRADOR: presença, uso, viagens e licença
+    // -----------------------------------------------------------
+    if (action === 'admin-stats' && req.method === 'GET') {
+      if (!sessionUser.isAdmin) return res.status(403).json({ error: 'Apenas o administrador.' });
+      const dbRes = await readDbFromGithub();
+      const dbData = dbRes.notFound ? {} : (dbRes.data || {});
+      let pres = { users: {} };
+      try { pres = (await readPresence()).data; } catch (e) { console.error('Falha ao ler presença:', e.message); }
+      const now = Date.now();
+      const trips = Array.isArray(dbData.trips) ? dbData.trips : [];
+      const users = (Array.isArray(dbData.users) ? dbData.users : []).map(u => {
+        const p = pres.users[u.id] || {};
+        const last = p.lastSeenAt ? Date.parse(p.lastSeenAt) : 0;
+        const sessions = p.sessions || 0;
+        return {
+          id: u.id, name: u.name, username: u.username, active: u.active !== false,
+          online: last > 0 && now - last < ONLINE_WINDOW_MS,
+          lastLoginAt: p.lastLoginAt || null,
+          lastSeenAt: p.lastSeenAt || null,
+          sessions,
+          avgUsageMs: sessions ? Math.round((p.totalMs || 0) / sessions) : 0,
+          tripsCount: trips.filter(t => t.ownerId === u.id).length,
+          license: u.accessPeriod || 'lifetime',
+          access: getAccessInfo(u, now)
+        };
+      });
+      return res.status(200).json({ ok: true, users });
+    }
+
     // -----------------------------------------------------------
     // 0.8 DEFINIR / RENOVAR PERÍODO DE ACESSO (SOMENTE ADMIN)
     // Renovação soma ao tempo restante; "replace" recomeça a contar de hoje.

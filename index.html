@@ -128,7 +128,7 @@
             <span class="w-full flex items-center justify-between text-[9px] sm:text-[11px] uppercase font-bold text-teal-300/90 tracking-wider mt-1 whitespace-nowrap">
               <span>Travel Suite</span>
               <span>-</span>
-              <span>1.02</span>
+              <span>1.03</span>
             </span>
           </div>
         </div>
@@ -771,6 +771,22 @@
         </div>
       </div>
 
+      <!-- Painel de uso dos usuários -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+          <h3 class="text-sm font-bold text-navy-900"><i class="fa-solid fa-chart-simple text-teal-600 mr-1.5"></i> Painel de usuários</h3>
+          <button type="button" onclick="loadUsersStats()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg transition"><i class="fa-solid fa-rotate mr-1"></i>Atualizar</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left whitespace-nowrap">
+            <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
+              <tr><th class="px-4 py-2">Usuário</th><th class="px-4 py-2">Status</th><th class="px-4 py-2">Último login</th><th class="px-4 py-2">Tempo médio de uso</th><th class="px-4 py-2 text-center">Viagens</th><th class="px-4 py-2">Licença</th><th class="px-4 py-2">Dias restantes</th></tr>
+            </thead>
+            <tbody id="usersStatsBody" class="divide-y divide-slate-100"><tr><td colspan="7" class="px-4 py-4 text-slate-400 text-center">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Users List Grid -->
       <div id="usersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <!-- Dynamically populated user cards -->
@@ -792,7 +808,7 @@
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <span class="inline-flex items-center gap-2 rounded-full bg-teal-400/15 border border-teal-300/30 px-4 py-1.5 text-xs font-bold text-teal-200">
-              <i class="fa-solid fa-code-branch"></i> Versão 1.02
+              <i class="fa-solid fa-code-branch"></i> Versão 1.03
             </span>
             <span class="inline-flex items-center gap-2 rounded-full bg-amber-400/15 border border-amber-300/30 px-4 py-1.5 text-xs font-bold text-amber-200">
               <i class="fa-solid fa-code"></i> Criado por DJC-Soluções
@@ -854,7 +870,7 @@
           </div>
           <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span><strong>Kisuco Planner</strong> · Travel Suite</span>
-            <span class="font-bold text-teal-700">Versão 1.02 · DJC-Soluções</span>
+            <span class="font-bold text-teal-700">Versão 1.03 · DJC-Soluções</span>
           </div>
         </div>
       </div>
@@ -1014,17 +1030,17 @@
 
   <!-- TRIP MODAL (Create/Edit) -->
   <div id="tripModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 overflow-y-auto max-h-[90vh]">
-      <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+    <div class="bg-white rounded-2xl max-w-4xl w-full p-5 shadow-2xl border border-slate-200 overflow-y-auto max-h-[96vh]">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
         <h3 id="tripModalTitle" class="text-lg font-bold text-navy-900">Nova Viagem</h3>
         <button onclick="closeTripModal()" class="text-slate-400 hover:text-slate-600 p-1">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
 
-      <form id="tripForm" onsubmit="saveTripForm(event)" class="space-y-4 text-xs sm:text-sm">
+      <form id="tripForm" onsubmit="saveTripForm(event)" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-xs sm:text-sm">
         <input type="hidden" id="tripIdInput" />
-
+        <div class="space-y-3">
         <div>
           <label class="block font-bold text-slate-700 mb-1">Destino ou Título *</label>
           <input type="text" id="tripTitleInput" required placeholder="Ex: Férias em Florianópolis, Eurotrip..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-teal-500 focus:outline-none" />
@@ -1064,6 +1080,8 @@
           </div>
         </div>
 
+        </div>
+        <div class="space-y-3">
         <div>
           <label class="block font-bold text-slate-700 mb-1">Foto de Capa</label>
           <div class="flex items-center gap-3 mb-2">
@@ -1096,12 +1114,14 @@
             <span id="tripOwnerBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"></span>
           </div>
           <p class="text-[11px] text-slate-400 mb-2">Selecione os usuários autorizados a visualizar e colaborar nesta viagem:</p>
-          <div id="tripShareUsersList" class="space-y-1.5 max-h-36 overflow-y-auto p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+          <div id="tripShareUsersList" class="space-y-1.5 max-h-24 overflow-y-auto p-2.5 bg-slate-50 rounded-xl border border-slate-200">
             <!-- Checkboxes populados dinamicamente -->
           </div>
         </div>
 
-        <div class="flex items-center justify-end space-x-2 pt-4 border-t border-slate-100">
+        </div>
+
+        <div class="md:col-span-2 flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
           <button type="button" onclick="closeTripModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition">Cancelar</button>
           <button type="submit" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition shadow">Salvar Viagem</button>
         </div>
@@ -1581,7 +1601,7 @@
     /* -------------------------------------------------------------
      * APPLICATION STATE & EXTERNAL DATABASE (djc_travel_planner_bd.json)
      * ------------------------------------------------------------- */
-    const APP_VERSION = '1.02';
+    const APP_VERSION = '1.03';
     const APP_NAME = 'Kisuco Planner';
     const EXTERNAL_DB_FILE = 'djc_travel_planner_bd.json';
     const STORAGE_KEY = 'djc_travel_planner_bd_v1';
@@ -1828,6 +1848,54 @@
         const t = countdownText(Number(el.dataset.countdown));
         const n = el.lastChild; if (n && n.nodeType === 3) n.nodeValue = t; else el.append(t);
       });
+    }
+
+    function fmtDuration(ms) {
+      if (!ms) return '—';
+      const m = Math.round(ms / 60000);
+      if (m < 1) return 'menos de 1 min';
+      return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}min` : `${m} min`;
+    }
+    function fmtDateTime(iso) {
+      return iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+    }
+    async function loadUsersStats() {
+      const body = document.getElementById('usersStatsBody');
+      if (!body || !isCurrentUserAdmin() || !getAuthToken() || offlineMode) return;
+      try {
+        const res = await fetch(`${API_DB_ENDPOINT}?action=admin-stats&t=${Date.now()}`, { headers: { 'Authorization': `Bearer ${getAuthToken()}` }, cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const list = (await res.json()).users || [];
+        body.innerHTML = list.length ? list.map(u => {
+          const a = u.access || {};
+          const lic = a.lifetime ? 'Vitalício' : (ACCESS_LABELS[u.license] || '—');
+          const days = a.lifetime ? 'Sem limite' : (a.expired ? '<span class="font-bold text-rose-600">Expirado</span>' : `<span class="font-bold ${a.remainingDays <= 7 ? 'text-amber-600' : 'text-slate-700'}">${accessDaysText(a.remainingDays)}</span>`);
+          const st = u.active === false ? '<span class="text-slate-400">● Bloqueado</span>' : (u.online ? '<span class="font-bold text-emerald-600">● Online</span>' : '<span class="text-slate-400">○ Offline</span>');
+          return `<tr class="hover:bg-slate-50"><td class="px-4 py-2.5"><span class="font-bold text-navy-900">${escHtml(u.name)}</span> <span class="text-slate-400">@${escHtml(u.username)}</span></td><td class="px-4 py-2.5">${st}</td><td class="px-4 py-2.5 text-slate-600">${u.lastLoginAt ? fmtDateTime(u.lastLoginAt) : 'Nunca entrou'}</td><td class="px-4 py-2.5 text-slate-600">${fmtDuration(u.avgUsageMs)}</td><td class="px-4 py-2.5 text-center font-bold text-slate-700">${u.tripsCount}</td><td class="px-4 py-2.5 text-slate-700">${escHtml(lic)}</td><td class="px-4 py-2.5">${days}</td></tr>`;
+        }).join('') : '<tr><td colspan="7" class="px-4 py-4 text-slate-400 text-center">Nenhum usuário cadastrado.</td></tr>';
+      } catch (_) {
+        body.innerHTML = '<tr><td colspan="7" class="px-4 py-4 text-rose-500 text-center">Não foi possível carregar o painel agora.</td></tr>';
+      }
+    }
+
+    // Presença: avisa o servidor a cada 5 min e ao fechar, com o tempo em que a aba ficou visível
+    let presenceTimer = null, presenceSince = null, presenceActiveMs = 0;
+    function presenceFlush() { if (presenceSince !== null) { const n = Date.now(); presenceActiveMs += n - presenceSince; presenceSince = n; } }
+    async function sendPing() {
+      presenceFlush();
+      if (!getAuthToken() || offlineMode || !currentSession || currentSession.isAdmin) return;
+      const ms = presenceActiveMs; presenceActiveMs = 0;
+      try {
+        await fetch(`${API_DB_ENDPOINT}?action=ping`, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` }, body: JSON.stringify({ activeMs: ms }) });
+      } catch (_) { presenceActiveMs += ms; }
+    }
+    function startPresence() {
+      if (presenceTimer) return;
+      presenceSince = document.visibilityState === 'visible' ? Date.now() : null;
+      presenceTimer = setInterval(sendPing, 5 * 60 * 1000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { presenceFlush(); presenceSince = null; } else presenceSince = Date.now(); });
+      window.addEventListener('pagehide', sendPing);
+      sendPing();
     }
 
     function getAuthToken() {
@@ -2128,7 +2196,7 @@
         switchTab(state.activeTab || 'dashboard');
         showToast(`Bem-vindo(a), ${currentSession.name}!`);
         updateAccessBadge();
-        if (!currentSession.isAdmin) showAccessNotice();
+        if (!currentSession.isAdmin) { showAccessNotice(); startPresence(); }
       } catch (err) {
         console.error('Erro no login:', err);
         btn.disabled = false;
@@ -5185,6 +5253,7 @@
     }
 
     function renderUsersView() {
+      if (isCurrentUserAdmin()) loadUsersStats();
       if (!isCurrentUserAdmin()) {
         switchTab('dashboard');
         return;
@@ -5482,6 +5551,8 @@ Senha: ${u.password}`;
       await preloadCovers();
       switchTab('dashboard');
       setInterval(tickCountdowns, 15000);
+      setInterval(() => { if (state.activeTab === 'users' && isCurrentUserAdmin() && document.visibilityState === 'visible') loadUsersStats(); }, 60000);
+      if (currentSession && !currentSession.isAdmin && getAuthToken()) startPresence();
     };
   </script>
 </body>
