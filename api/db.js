@@ -35,6 +35,63 @@ function verifyToken(token, secret) {
   }
 }
 
+// -----------------------------------------------------------
+// PERÍODO DE ACESSO (calculado SEMPRE no servidor, com o relógio do servidor)
+// -----------------------------------------------------------
+const DAY_MS = 24 * 60 * 60 * 1000;
+const ACCESS_PERIODS = {
+  '7d': { days: 7 },
+  '30d': { days: 30 },
+  '3m': { months: 3 },
+  '6m': { months: 6 },
+  '1y': { months: 12 },
+  lifetime: {}
+};
+
+function addPeriod(baseMs, key) {
+  const def = ACCESS_PERIODS[key];
+  const d = new Date(baseMs);
+  if (def.days) {
+    d.setUTCDate(d.getUTCDate() + def.days);
+  } else if (def.months) {
+    const day = d.getUTCDate();
+    d.setUTCDate(1);
+    d.setUTCMonth(d.getUTCMonth() + def.months);
+    const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+    d.setUTCDate(Math.min(day, last));
+  }
+  return d.getTime();
+}
+
+// Usuários sem campos de acesso (criados na v1.00) são tratados como vitalícios.
+// Dados de acesso corrompidos NUNCA liberam o acesso (falha fechada).
+function getAccessInfo(user, now = Date.now()) {
+  const raw = user && user.accessExpiresAt;
+  if (!raw) {
+    const corrupted = user && user.accessPeriod && user.accessPeriod !== 'lifetime';
+    if (corrupted) return { lifetime: false, expired: true, expiresAt: null, remainingDays: 0 };
+    return { lifetime: true, expired: false, expiresAt: null, remainingDays: null };
+  }
+  const exp = Date.parse(raw);
+  if (Number.isNaN(exp)) return { lifetime: false, expired: true, expiresAt: null, remainingDays: 0 };
+  const remainingMs = exp - now;
+  return {
+    lifetime: false,
+    expired: remainingMs <= 0,
+    expiresAt: new Date(exp).toISOString(),
+    remainingDays: remainingMs <= 0 ? 0 : Math.ceil(remainingMs / DAY_MS)
+  };
+}
+
+function formatDateBR(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+}
+
+// Cache curto (15 s) só da lista de usuários, para validar o acesso em toda requisição
+// sem consultar o GitHub a cada miniatura/anexo.
+let accessCache = { at: 0, users: null };
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -139,14 +196,27 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Este usuário está bloqueado pelo administrador.' });
       }
 
+      const access = getAccessInfo(foundUser);
+      if (access.expired) {
+        return res.status(403).json({
+          code: 'ACCESS_EXPIRED',
+          error: access.expiresAt
+            ? `Seu período de acesso expirou em ${formatDateBR(access.expiresAt)}. Fale com o administrador para renovar.`
+            : 'Seu período de acesso expirou. Fale com o administrador para renovar.'
+        });
+      }
+
       const userPayload = {
         id: foundUser.id,
         username: foundUser.username,
         name: foundUser.name || foundUser.username,
         isAdmin: false
       };
-      const token = signToken({ ...userPayload, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 }, APP_PASSWORD);
-      return res.status(200).json({ ok: true, token, user: userPayload });
+      const tokenExp = access.expiresAt
+        ? Math.min(Date.now() + 30 * DAY_MS, Date.parse(access.expiresAt))
+        : Date.now() + 30 * DAY_MS;
+      const token = signToken({ ...userPayload, exp: tokenExp }, APP_PASSWORD);
+      return res.status(200).json({ ok: true, token, user: userPayload, access });
     } catch (err) {
       console.error('Erro no login:', err);
       return res.status(500).json({ error: 'Erro ao validar credenciais.' });
@@ -162,6 +232,43 @@ export default async function handler(req, res) {
 
   if (!sessionUser) {
     return res.status(401).json({ error: 'Não autorizado. Faça login novamente.' });
+  }
+
+  // -----------------------------------------------------------
+  // CONTROLE DE ACESSO DO USUÁRIO COMUM (a cada requisição, no servidor):
+  // usuário precisa existir, estar ativo e com o período de acesso vigente.
+  // -----------------------------------------------------------
+  let sessionAccess = { lifetime: true, expired: false, expiresAt: null, remainingDays: null };
+  if (!sessionUser.isAdmin) {
+    try {
+      if (!accessCache.users || Date.now() - accessCache.at > 15000) {
+        const r = await readDbFromGithub();
+        accessCache = { at: Date.now(), users: r.notFound ? [] : ((r.data && r.data.users) || []) };
+      }
+    } catch (err) {
+      console.error('Falha ao validar acesso:', err);
+      return res.status(503).json({ error: 'Não foi possível validar seu acesso agora. Tente novamente.' });
+    }
+    const rec = (accessCache.users || []).find(u => u.id === sessionUser.id);
+    if (!rec) return res.status(403).json({ code: 'USER_NOT_FOUND', error: 'Usuário não encontrado ou removido.' });
+    if (rec.active === false) return res.status(403).json({ code: 'USER_BLOCKED', error: 'Este usuário está bloqueado pelo administrador.' });
+    sessionAccess = getAccessInfo(rec);
+    if (sessionAccess.expired) {
+      return res.status(403).json({
+        code: 'ACCESS_EXPIRED',
+        error: sessionAccess.expiresAt
+          ? `Seu período de acesso expirou em ${formatDateBR(sessionAccess.expiresAt)}. Fale com o administrador para renovar.`
+          : 'Seu período de acesso expirou. Fale com o administrador para renovar.'
+      });
+    }
+  }
+
+  if (action === 'session' && req.method === 'GET') {
+    return res.status(200).json({
+      ok: true,
+      user: { id: sessionUser.id, username: sessionUser.username, name: sessionUser.name, isAdmin: Boolean(sessionUser.isAdmin) },
+      access: sessionAccess
+    });
   }
 
   // -----------------------------------------------------------
@@ -218,6 +325,55 @@ export default async function handler(req, res) {
   }
 
   try {
+    // -----------------------------------------------------------
+    // 0.8 DEFINIR / RENOVAR PERÍODO DE ACESSO (SOMENTE ADMIN)
+    // Renovação soma ao tempo restante; "replace" recomeça a contar de hoje.
+    // -----------------------------------------------------------
+    if (action === 'set-access' && req.method === 'POST') {
+      if (!sessionUser.isAdmin) return res.status(403).json({ error: 'Apenas o administrador pode alterar períodos de acesso.' });
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const userId = String(body?.userId || '');
+      const period = String(body?.period || '');
+      const replace = body?.replace === true;
+      if (!Object.prototype.hasOwnProperty.call(ACCESS_PERIODS, period)) {
+        return res.status(400).json({ error: 'Período inválido.' });
+      }
+
+      const dbResult = await readDbFromGithub();
+      if (dbResult.notFound || !Array.isArray(dbResult.data?.users)) {
+        return res.status(404).json({ error: 'Banco de usuários não encontrado.' });
+      }
+      const idx = dbResult.data.users.findIndex(u => u.id === userId);
+      if (idx === -1) return res.status(404).json({ error: 'Usuário não encontrado.' });
+
+      const now = Date.now();
+      const rec = dbResult.data.users[idx];
+      const cur = getAccessInfo(rec, now);
+      let expiresAt = null;
+      if (period !== 'lifetime') {
+        const base = (replace || cur.lifetime) ? now : Math.max(now, Date.parse(cur.expiresAt));
+        expiresAt = new Date(addPeriod(base, period)).toISOString();
+      }
+      dbResult.data.users[idx] = {
+        ...rec,
+        accessPeriod: period,
+        accessExpiresAt: expiresAt,
+        accessUpdatedAt: new Date(now).toISOString()
+      };
+      await writeDbToGithub(dbResult.data, dbResult.sha);
+      accessCache.at = 0;
+      return res.status(200).json({
+        ok: true,
+        user: {
+          id: userId,
+          accessPeriod: period,
+          accessExpiresAt: expiresAt,
+          accessUpdatedAt: dbResult.data.users[idx].accessUpdatedAt
+        },
+        access: getAccessInfo(dbResult.data.users[idx], now)
+      });
+    }
+
     // -----------------------------------------------------------
     // 1. BAIXAR ANEXO BINÁRIO DA PASTA anexos/ NO GITHUB
     // -----------------------------------------------------------

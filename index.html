@@ -128,7 +128,7 @@
             <span class="w-full flex items-center justify-between text-[9px] sm:text-[11px] uppercase font-bold text-teal-300/90 tracking-wider mt-1 whitespace-nowrap">
               <span>Travel Suite</span>
               <span>-</span>
-              <span>1.00</span>
+              <span>1.01</span>
             </span>
           </div>
         </div>
@@ -140,6 +140,9 @@
             <i id="currentUserIcon" class="fa-solid fa-user text-[10px] flex-shrink-0"></i>
             <span id="currentUserLabel" class="truncate">Admin</span>
             <i id="currentUserKeyHint" class="fa-solid fa-key text-[9px] text-slate-400 hidden ml-0.5 flex-shrink-0"></i>
+          </button>
+          <button type="button" id="accessBadge" onclick="showAccessNotice()" class="hidden items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-800 text-emerald-300 border border-slate-700 transition cursor-pointer whitespace-nowrap flex-shrink-0" title="Seu período de acesso">
+            <i class="fa-regular fa-clock text-[10px]"></i><span id="accessBadgeText"></span>
           </button>
 
           <!-- Database Sync Status Badge -->
@@ -789,7 +792,7 @@
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <span class="inline-flex items-center gap-2 rounded-full bg-teal-400/15 border border-teal-300/30 px-4 py-1.5 text-xs font-bold text-teal-200">
-              <i class="fa-solid fa-code-branch"></i> Versão 1.00
+              <i class="fa-solid fa-code-branch"></i> Versão 1.01
             </span>
             <span class="inline-flex items-center gap-2 rounded-full bg-amber-400/15 border border-amber-300/30 px-4 py-1.5 text-xs font-bold text-amber-200">
               <i class="fa-solid fa-code"></i> Criado por DJC-Soluções
@@ -851,7 +854,7 @@
           </div>
           <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span><strong>Kisuco Planner</strong> · Travel Suite</span>
-            <span class="font-bold text-teal-700">Versão 1.00 · DJC-Soluções</span>
+            <span class="font-bold text-teal-700">Versão 1.01 · DJC-Soluções</span>
           </div>
         </div>
       </div>
@@ -897,6 +900,16 @@
     </div>
   </div>
 
+  <!-- AVISO DE PERÍODO DE ACESSO (usuário comum) -->
+  <div id="accessNoticeModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-center">
+      <div id="accessNoticeIcon" class="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center text-xl bg-emerald-100 text-emerald-700"><i class="fa-regular fa-clock"></i></div>
+      <h3 class="text-lg font-extrabold text-navy-900">Seu período de acesso</h3>
+      <p id="accessNoticeText" class="text-sm text-slate-600 mt-2"></p>
+      <button type="button" onclick="document.getElementById('accessNoticeModal').classList.add('hidden')" class="mt-5 w-full py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold rounded-xl shadow transition">Entendi</button>
+    </div>
+  </div>
+
   <!-- USER CREATE / EDIT MODAL (ADMIN) -->
   <div id="userModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
@@ -929,6 +942,17 @@
               Gerar
             </button>
           </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <label for="userAccessPeriodInput" class="block font-bold text-slate-700">Período de acesso</label>
+          <p id="userAccessStatusText" class="text-[11px] text-slate-500 hidden"></p>
+          <select id="userAccessPeriodInput" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-teal-500 focus:outline-none"></select>
+          <div id="userAccessReplaceRow" class="flex items-center space-x-2 hidden">
+            <input type="checkbox" id="userAccessReplaceInput" class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500" />
+            <label for="userAccessReplaceInput" class="text-[11px] font-semibold text-slate-600 select-none">Substituir o tempo restante (contar a partir de hoje)</label>
+          </div>
+          <p id="userAccessHint" class="text-[11px] text-slate-400"></p>
         </div>
 
         <div class="flex items-center space-x-2 pt-1">
@@ -1550,7 +1574,7 @@
     /* -------------------------------------------------------------
      * APPLICATION STATE & EXTERNAL DATABASE (djc_travel_planner_bd.json)
      * ------------------------------------------------------------- */
-    const APP_VERSION = '1.00';
+    const APP_VERSION = '1.01';
     const APP_NAME = 'Kisuco Planner';
     const EXTERNAL_DB_FILE = 'djc_travel_planner_bd.json';
     const STORAGE_KEY = 'djc_travel_planner_bd_v1';
@@ -1676,8 +1700,109 @@
     const AUTH_USER_KEY = 'djc_travel_planner_user_v1';
     const API_DB_ENDPOINT = '/api/db';
     let offlineMode = false;
+    const __origFetch = window.fetch.bind(window);
+    window.fetch = async function(input, init) {
+      const res = await __origFetch(input, init);
+      try {
+        const url = typeof input === 'string' ? input : ((input && input.url) || '');
+        if (res.status === 403 && url.startsWith(API_DB_ENDPOINT) && !url.includes('action=login') && getAuthToken()) {
+          const d = await res.clone().json().catch(() => ({}));
+          if (['ACCESS_EXPIRED', 'USER_BLOCKED', 'USER_NOT_FOUND'].includes(d.code)) lockoutSession(d.error);
+        }
+      } catch (_) {}
+      return res;
+    };
     let currentSession = null; // { id, name, username, isAdmin, token }
     let visiblePasswordsMap = {}; // { userId: true/false }
+
+    const ACCESS_LABELS = { '7d': '7 dias', '30d': '30 dias', '3m': '3 meses', '6m': '6 meses', '1y': '1 ano', 'lifetime': 'Vitalício' };
+    let currentAccess = null; // { lifetime, expired, expiresAt, remainingDays } (informado pelo servidor)
+
+    function accessDateBR(iso) { return new Date(iso).toLocaleDateString('pt-BR'); }
+    function accessDaysText(n) { return n === 1 ? '1 dia' : `${n} dias`; }
+
+    // Calcula só para EXIBIÇÃO (a validação real é sempre feita no servidor)
+    function describeAccess(a) {
+      if (!a) return null;
+      if (a.lifetime) return { text: 'Acesso vitalício', level: 'ok', days: null };
+      if (a.expired) return { text: a.expiresAt ? `Expirado em ${accessDateBR(a.expiresAt)}` : 'Acesso expirado', level: 'bad', days: 0 };
+      const d = a.remainingDays;
+      return { text: `${accessDaysText(d)} restantes (até ${accessDateBR(a.expiresAt)})`, level: d <= 7 ? 'warn' : 'ok', days: d };
+    }
+
+    function accessFromUserRecord(u) {
+      const raw = u && u.accessExpiresAt;
+      if (!raw) return (u && u.accessPeriod && u.accessPeriod !== 'lifetime') ? { lifetime: false, expired: true, expiresAt: null, remainingDays: 0 } : { lifetime: true, expired: false, expiresAt: null, remainingDays: null };
+      const ms = Date.parse(raw) - Date.now();
+      const valid = !Number.isNaN(Date.parse(raw)) && Date.parse(raw) > Date.UTC(2000, 0, 1);
+      return { lifetime: false, expired: !(ms > 0), expiresAt: valid ? raw : null, remainingDays: ms > 0 ? Math.ceil(ms / 86400000) : 0 };
+    }
+
+    function updateAccessBadge() {
+      const b = document.getElementById('accessBadge');
+      const t = document.getElementById('accessBadgeText');
+      if (!b || !t) return;
+      const show = Boolean(currentSession && !currentSession.isAdmin && currentAccess);
+      b.classList.toggle('hidden', !show);
+      b.classList.toggle('flex', show);
+      if (!show) return;
+      const info = describeAccess(currentAccess);
+      t.textContent = info.days === null ? 'Vitalício' : accessDaysText(info.days);
+      b.className = b.className.replace(/text-(emerald|amber|rose)-300/g, '') + (info.level === 'bad' ? ' text-rose-300' : info.level === 'warn' ? ' text-amber-300' : ' text-emerald-300');
+    }
+
+    function showAccessNotice() {
+      const info = describeAccess(currentAccess);
+      if (!info || !currentSession || currentSession.isAdmin) return;
+      const icon = document.getElementById('accessNoticeIcon');
+      const colors = { ok: 'bg-emerald-100 text-emerald-700', warn: 'bg-amber-100 text-amber-700', bad: 'bg-rose-100 text-rose-700' };
+      icon.className = 'w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center text-xl ' + colors[info.level];
+      document.getElementById('accessNoticeText').textContent = info.days === null
+        ? 'Seu acesso é vitalício. Não há data de expiração.'
+        : `Você ainda tem ${info.text}.` + (info.level === 'warn' ? ' Fale com o administrador para renovar antes que expire.' : '');
+      document.getElementById('accessNoticeModal').classList.remove('hidden');
+    }
+
+    function setCurrentAccess(a) {
+      currentAccess = a || null;
+      if (currentSession) {
+        currentSession.accessExpiresAt = a && !a.lifetime ? a.expiresAt : null;
+        currentSession.accessLifetime = Boolean(a && a.lifetime);
+        const store = sessionStorage.getItem(AUTH_USER_KEY) ? sessionStorage : localStorage;
+        try { store.setItem(AUTH_USER_KEY, JSON.stringify(currentSession)); } catch (_) {}
+      }
+      updateAccessBadge();
+    }
+
+    // Verificação local (só vale para uso sem rede; o servidor é quem manda)
+    function isLocalAccessExpired() {
+      const s = currentSession || getSavedSession();
+      if (!s || s.isAdmin || s.accessLifetime) return false;
+      if (!s.accessExpiresAt) return true;
+      return Date.now() >= Date.parse(s.accessExpiresAt);
+    }
+
+    // Servidor negou: acesso expirado / usuário bloqueado / removido => encerra sessão e limpa cache local
+    function lockoutSession(message) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+      sessionStorage.removeItem(AUTH_TOKEN_KEY); sessionStorage.removeItem(AUTH_USER_KEY);
+      localStorage.removeItem(AUTH_TOKEN_KEY); localStorage.removeItem(AUTH_USER_KEY);
+      currentSession = null; currentAccess = null; offlineMode = false;
+      try { state.trips = []; state.users = []; state.userMaps = {}; state.activeTripId = null; } catch (_) {}
+      updateUserHeaderUI(); updateAccessBadge();
+      updateDbSyncBadge('local', 'Acesso Encerrado');
+      try { renderCurrentView(); } catch (_) {}
+      openAuthModal(true, message || 'Seu acesso foi encerrado. Fale com o administrador.');
+    }
+
+    async function refreshAccessInfo() {
+      const token = getAuthToken();
+      if (!token || offlineMode || !currentSession || currentSession.isAdmin) { updateAccessBadge(); return; }
+      try {
+        const res = await fetch(`${API_DB_ENDPOINT}?action=session&t=${Date.now()}`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store' });
+        if (res.ok) { const d = await res.json(); setCurrentAccess(d.access); }
+      } catch (_) { updateAccessBadge(); }
+    }
 
     function getAuthToken() {
       return sessionStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY) || '';
@@ -1735,6 +1860,7 @@
           : 'Não conectado';
       }
 
+      updateAccessBadge();
       if (navUsers) navUsers.classList.toggle('hidden', !showAdmin);
       if (mobileNavUsers) mobileNavUsers.classList.toggle('hidden', !showAdmin);
       if (mobileChangePwd) mobileChangePwd.classList.toggle('hidden', !isRegularUser);
@@ -1951,6 +2077,11 @@
           isAdmin: Boolean(data.user.isAdmin),
           token: data.token
         };
+        currentAccess = data.user.isAdmin ? null : (data.access || null);
+        if (currentAccess) {
+          currentSession.accessExpiresAt = currentAccess.lifetime ? null : currentAccess.expiresAt;
+          currentSession.accessLifetime = Boolean(currentAccess.lifetime);
+        }
         sessionStorage.setItem(AUTH_TOKEN_KEY, data.token);
         sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentSession));
         localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -1970,6 +2101,8 @@
         }
         switchTab(state.activeTab || 'dashboard');
         showToast(`Bem-vindo(a), ${currentSession.name}!`);
+        updateAccessBadge();
+        if (!currentSession.isAdmin) showAccessNotice();
       } catch (err) {
         console.error('Erro no login:', err);
         btn.disabled = false;
@@ -1982,10 +2115,17 @@
     }
 
     function continueOfflineMode() {
-      offlineMode = true;
-      if (!currentSession) {
-        currentSession = getSavedSession() || { id: 'admin', name: 'Offline (Local)', username: 'admin', isAdmin: true };
+      const saved = currentSession || getSavedSession();
+      if (!saved || !getAuthToken()) {
+        showToast('Faça login ao menos uma vez para usar o modo offline.', 'error');
+        return;
       }
+      if (isLocalAccessExpired()) {
+        lockoutSession('Seu período de acesso expirou. Fale com o administrador para renovar.');
+        return;
+      }
+      offlineMode = true;
+      if (!currentSession) currentSession = saved;
       updateUserHeaderUI();
       closeAuthModal();
       updateDbSyncBadge('local', 'Modo Offline');
@@ -1998,6 +2138,7 @@
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem(AUTH_USER_KEY);
       currentSession = null;
+      currentAccess = null;
       offlineMode = false;
       visiblePasswordsMap = {};
       updateUserHeaderUI();
@@ -2083,6 +2224,8 @@
             return false;
           }
 
+          if (res.status === 403) return false;
+
           if (res.ok) {
             const externalData = await res.json();
             if (externalData && typeof externalData === 'object' && Array.isArray(externalData.trips)) {
@@ -2112,6 +2255,11 @@
       } else if (!offlineMode && !token) {
         updateDbSyncBadge('local', 'Aguardando Login');
         openAuthModal(false);
+      }
+
+      if (!loadedFromExternal && !offlineMode && token && isLocalAccessExpired()) {
+        lockoutSession('Seu período de acesso expirou. Fale com o administrador para renovar.');
+        return false;
       }
 
       if (!loadedFromExternal) {
@@ -5048,6 +5196,10 @@
               </div>
             </div>
 
+            <div class="mt-2 text-[11px] font-bold ${(() => { const i = describeAccess(accessFromUserRecord(u)); return i.level === 'bad' ? 'text-rose-600' : i.level === 'warn' ? 'text-amber-600' : 'text-slate-500'; })()}">
+              <i class="fa-regular fa-clock mr-1"></i>${escHtml(describeAccess(accessFromUserRecord(u)).text)}
+            </div>
+
             <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
               <span>Próprias: <strong class="text-navy-900">${ownedCount}</strong> • Compartilhadas: <strong class="text-teal-700">${sharedCount}</strong></span>
               <span class="font-bold ${u.active !== false ? 'text-emerald-600' : 'text-rose-500'}">${u.active !== false ? '● Ativo' : '● Bloqueado'}</span>
@@ -5101,9 +5253,23 @@ Senha: ${u.password}`;
       const form = document.getElementById('userForm');
       form.reset();
 
+      const sel = document.getElementById('userAccessPeriodInput');
+      const repRow = document.getElementById('userAccessReplaceRow');
+      const stat = document.getElementById('userAccessStatusText');
+      const hint = document.getElementById('userAccessHint');
+      const opts = Object.entries(ACCESS_LABELS).map(([k, v]) => `<option value="${k}">${userId ? (k === 'lifetime' ? 'Tornar vitalício' : 'Somar ' + v) : v}</option>`).join('');
+      sel.innerHTML = (userId ? '<option value="keep">Não alterar</option>' : '') + opts;
+      sel.value = userId ? 'keep' : '30d';
+      repRow.classList.add('hidden'); stat.classList.add('hidden');
+      hint.textContent = userId ? 'Renovar soma ao tempo que ainda restar.' : 'A contagem começa agora, ao criar o usuário.';
+
       if (userId) {
         const u = (state.users || []).find(x => x.id === userId);
         if (!u) return;
+        const info = describeAccess(accessFromUserRecord(u));
+        stat.textContent = 'Situação atual: ' + info.text; stat.classList.remove('hidden');
+        repRow.classList.remove('hidden');
+        if (info.days === null) { document.getElementById('userAccessReplaceInput').checked = true; hint.textContent = 'Usuário vitalício: escolher um período o converte em acesso limitado, contado de hoje.'; }
         document.getElementById('userModalTitle').textContent = 'Editar Usuário';
         document.getElementById('userEditIdInput').value = u.id;
         document.getElementById('userNameInput').value = u.name || '';
@@ -5151,6 +5317,10 @@ Senha: ${u.password}`;
         return;
       }
 
+      const periodSel = document.getElementById('userAccessPeriodInput').value;
+      const replaceFlag = document.getElementById('userAccessReplaceInput').checked;
+      let accessTargetId = editId;
+
       if (editId) {
         const idx = state.users.findIndex(u => u.id === editId);
         if (idx !== -1) {
@@ -5170,14 +5340,39 @@ Senha: ${u.password}`;
           username,
           password,
           active,
+          accessPeriod: periodSel,
+          accessExpiresAt: new Date(0).toISOString(), // falha fechada até o servidor definir o prazo
           createdAt: new Date().toISOString()
         };
+        accessTargetId = newUser.id;
         state.users.push(newUser);
         visiblePasswordsMap[newUser.id] = true;
         showToast(`Usuário "${name}" criado com sucesso!`);
       }
 
       await saveState();
+
+      if (accessTargetId && periodSel !== 'keep') {
+        try {
+          const res = await fetch(`${API_DB_ENDPOINT}?action=set-access`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` },
+            body: JSON.stringify({ userId: accessTargetId, period: periodSel, replace: replaceFlag })
+          });
+          const d = await res.json().catch(() => ({}));
+          const i = state.users.findIndex(x => x.id === accessTargetId);
+          if (res.ok && d.ok && i !== -1) {
+            state.users[i] = { ...state.users[i], ...d.user };
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+            showToast('Período de acesso: ' + describeAccess(d.access).text);
+          } else {
+            showToast(d.error || 'Não foi possível definir o período de acesso.', 'error');
+          }
+        } catch (_) {
+          showToast('Falha ao definir o período de acesso (sem conexão com o servidor).', 'error');
+        }
+      }
+
       closeUserModal();
       renderUsersView();
     }
@@ -5207,6 +5402,7 @@ Senha: ${u.password}`;
     window.onload = async function() {
       detectAndApplyDeviceLayout();
       await loadState();
+      await refreshAccessInfo();
       await preloadCovers();
       switchTab('dashboard');
     };
