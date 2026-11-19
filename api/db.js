@@ -104,9 +104,8 @@ export default async function handler(req, res) {
   const DB_FILE_PATH = process.env.DB_FILE_PATH || 'djc_travel_planner_bd.json';
 
   if (!APP_PASSWORD || !GITHUB_TOKEN || !GITHUB_REPO) {
-    return res.status(500).json({
-      error: 'Variáveis de ambiente ausentes na Vercel (APP_PASSWORD, GITHUB_TOKEN, GITHUB_REPO).'
-    });
+    console.error('Variáveis de ambiente ausentes na Vercel (APP_PASSWORD, GITHUB_TOKEN, GITHUB_REPO).');
+    return res.status(500).json({ error: 'Banco de dados em nuvem não configurado. Avise o administrador.' });
   }
 
   const ghHeaders = {
@@ -390,7 +389,7 @@ export default async function handler(req, res) {
       });
 
       if (!ghRes.ok) {
-        return res.status(ghRes.status).json({ error: 'Anexo não encontrado no GitHub.' });
+        return res.status(ghRes.status).json({ error: 'Anexo não encontrado no banco de dados em nuvem.' });
       }
 
       const arrayBuf = await ghRes.arrayBuffer();
@@ -439,7 +438,8 @@ export default async function handler(req, res) {
 
       if (!putRes.ok) {
         const errText = await putRes.text();
-        return res.status(putRes.status).json({ error: 'Erro ao salvar anexo no GitHub', details: errText });
+        console.error('Erro ao salvar anexo:', errText);
+        return res.status(putRes.status).json({ error: 'Erro ao salvar anexo no banco de dados em nuvem.' });
       }
 
       return res.status(200).json({ ok: true, filePath });
@@ -477,7 +477,7 @@ export default async function handler(req, res) {
       });
 
       if (!delRes.ok) {
-        return res.status(delRes.status).json({ error: 'Erro ao excluir anexo no GitHub.' });
+        return res.status(delRes.status).json({ error: 'Erro ao excluir anexo no banco de dados em nuvem.' });
       }
 
       return res.status(200).json({ ok: true });
@@ -496,7 +496,17 @@ export default async function handler(req, res) {
 
       // Segurança: usuários comuns não recebem as senhas de outras famílias
       if (!sessionUser.isAdmin && Array.isArray(jsonData.users)) {
-        jsonData.users = jsonData.users.map(u => ({
+        const me = sessionUser.id;
+        const meRec = jsonData.users.find(u => u.id === me) || {};
+        const allowed = Array.isArray(meRec.shareWith) ? meRec.shareWith : [];
+        const trips = Array.isArray(jsonData.trips) ? jsonData.trips : [];
+        const visible = new Set([me, ...allowed]);
+        trips.forEach(t => {
+          if (Array.isArray(t.sharedWith) && t.sharedWith.includes(me)) visible.add(t.ownerId || 'admin');
+          if ((t.ownerId || 'admin') === me && Array.isArray(t.sharedWith)) t.sharedWith.forEach(id => visible.add(id));
+        });
+        jsonData._shareableUserIds = allowed;
+        jsonData.users = jsonData.users.filter(u => visible.has(u.id)).map(u => ({
           id: u.id,
           name: u.name,
           username: u.username,
@@ -521,6 +531,18 @@ export default async function handler(req, res) {
       const existingData = currentDb.notFound ? {} : (currentDb.data || {});
 
       let finalPayload = { ...incoming };
+      delete finalPayload._shareableUserIds;
+
+      const PASSEIOS_MAX = 10;
+      const countP = t => (Array.isArray(t && t.attachments) ? t.attachments : []).filter(a => a && a.category === 'passeios').length;
+      const exTripsAll = Array.isArray(existingData.trips) ? existingData.trips : [];
+      const exById = new Map(exTripsAll.map(t => [t.id, t]));
+      for (const t of (Array.isArray(incoming.trips) ? incoming.trips : [])) {
+        const c = countP(t);
+        if (c > PASSEIOS_MAX && c > countP(exById.get(t.id))) {
+          return res.status(400).json({ error: `Limite de ${PASSEIOS_MAX} fotos de passeios por viagem.` });
+        }
+      }
 
       if (!sessionUser.isAdmin) {
         // Usuário comum não pode alterar a tabela de usuários/senhas nem viagens a que não tem acesso
@@ -528,7 +550,17 @@ export default async function handler(req, res) {
 
         // Garante que viagens privadas de outros usuários existentes no servidor não sejam apagadas
         const existingTrips = Array.isArray(existingData.trips) ? existingData.trips : [];
-        const incomingTrips = Array.isArray(incoming.trips) ? incoming.trips : [];
+        const myRec = (existingData.users || []).find(u => u.id === sessionUser.id) || {};
+        const allowedShare = new Set(Array.isArray(myRec.shareWith) ? myRec.shareWith : []);
+        const incomingTrips = (Array.isArray(incoming.trips) ? incoming.trips : []).map(t => {
+          const ex = exById.get(t.id);
+          const incShared = Array.isArray(t.sharedWith) ? t.sharedWith : [];
+          if (!ex) return { ...t, ownerId: sessionUser.id, sharedWith: incShared.filter(id => allowedShare.has(id)) };
+          const ownerId = ex.ownerId || 'admin';
+          const exShared = Array.isArray(ex.sharedWith) ? ex.sharedWith : [];
+          if (ownerId !== sessionUser.id) return { ...t, ownerId, sharedWith: exShared };
+          return { ...t, ownerId, sharedWith: incShared.filter(id => allowedShare.has(id) || exShared.includes(id)) };
+        });
         const incomingIds = new Set(incomingTrips.map(t => t.id));
 
         const otherPrivateTrips = existingTrips.filter(t => {
@@ -554,6 +586,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: `Método ${req.method} não permitido.` });
   } catch (error) {
     console.error('Erro na API /api/db:', error);
-    return res.status(500).json({ error: 'Erro interno no servidor', message: error.message });
+    return res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 }

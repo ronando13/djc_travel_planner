@@ -128,7 +128,7 @@
             <span class="w-full flex items-center justify-between text-[9px] sm:text-[11px] uppercase font-bold text-teal-300/90 tracking-wider mt-1 whitespace-nowrap">
               <span>Travel Suite</span>
               <span>-</span>
-              <span>1.01</span>
+              <span>1.02</span>
             </span>
           </div>
         </div>
@@ -146,7 +146,7 @@
           </button>
 
           <!-- Database Sync Status Badge -->
-          <button id="dbSyncStatus" onclick="reloadExternalDB()" title="Arquivo: djc_travel_planner_bd.json no GitHub (Clique para recarregar)" class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800/90 text-amber-400 border border-slate-700 hover:border-teal-500/50 transition cursor-pointer whitespace-nowrap flex-shrink-0">
+          <button id="dbSyncStatus" onclick="reloadExternalDB()" title="Banco de dados em nuvem (Clique para recarregar)" class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800/90 text-amber-400 border border-slate-700 hover:border-teal-500/50 transition cursor-pointer whitespace-nowrap flex-shrink-0">
             <i id="dbSyncIcon" class="fa-solid fa-circle-notch fa-spin text-[10px]"></i>
             <span id="dbSyncText">Sincronizando...</span>
           </button>
@@ -792,7 +792,7 @@
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <span class="inline-flex items-center gap-2 rounded-full bg-teal-400/15 border border-teal-300/30 px-4 py-1.5 text-xs font-bold text-teal-200">
-              <i class="fa-solid fa-code-branch"></i> Versão 1.01
+              <i class="fa-solid fa-code-branch"></i> Versão 1.02
             </span>
             <span class="inline-flex items-center gap-2 rounded-full bg-amber-400/15 border border-amber-300/30 px-4 py-1.5 text-xs font-bold text-amber-200">
               <i class="fa-solid fa-code"></i> Criado por DJC-Soluções
@@ -854,7 +854,7 @@
           </div>
           <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span><strong>Kisuco Planner</strong> · Travel Suite</span>
-            <span class="font-bold text-teal-700">Versão 1.01 · DJC-Soluções</span>
+            <span class="font-bold text-teal-700">Versão 1.02 · DJC-Soluções</span>
           </div>
         </div>
       </div>
@@ -953,6 +953,12 @@
             <label for="userAccessReplaceInput" class="text-[11px] font-semibold text-slate-600 select-none">Substituir o tempo restante (contar a partir de hoje)</label>
           </div>
           <p id="userAccessHint" class="text-[11px] text-slate-400"></p>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <span class="block font-bold text-slate-700">Usuários que aparecem na lista de compartilhamento</span>
+          <p class="text-[11px] text-slate-400">Este usuário só poderá compartilhar viagens com os nomes marcados abaixo.</p>
+          <div id="userShareAllowedList" class="space-y-1 max-h-40 overflow-y-auto"></div>
         </div>
 
         <div class="flex items-center space-x-2 pt-1">
@@ -1292,6 +1298,7 @@
             <span class="text-[11px] text-slate-400">Fotos, PDFs e documentos (até 3,2 MB cada — sincronizado na nuvem)</span>
             <input type="file" id="attFileInput" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" class="hidden" onchange="onAttFilesPicked(event)" />
           </label>
+          <p id="attLimitInfo" class="hidden mt-2 text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5"></p>
           <label class="md:hidden mt-2 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl py-2.5 cursor-pointer transition">
             <i class="fa-solid fa-camera text-teal-600"></i> Tirar foto agora
             <input type="file" id="attCameraInput" accept="image/*" capture="environment" class="hidden" onchange="onAttFilesPicked(event)" />
@@ -1574,7 +1581,7 @@
     /* -------------------------------------------------------------
      * APPLICATION STATE & EXTERNAL DATABASE (djc_travel_planner_bd.json)
      * ------------------------------------------------------------- */
-    const APP_VERSION = '1.01';
+    const APP_VERSION = '1.02';
     const APP_NAME = 'Kisuco Planner';
     const EXTERNAL_DB_FILE = 'djc_travel_planner_bd.json';
     const STORAGE_KEY = 'djc_travel_planner_bd_v1';
@@ -1802,6 +1809,25 @@
         const res = await fetch(`${API_DB_ENDPOINT}?action=session&t=${Date.now()}`, { headers: { 'Authorization': `Bearer ${token}` }, cache: 'no-store' });
         if (res.ok) { const d = await res.json(); setCurrentAccess(d.access); }
       } catch (_) { updateAccessBadge(); }
+    }
+
+    function countdownText(startMs) {
+      const diff = startMs - Date.now();
+      if (diff <= 0) return 'Chegou a hora de começar!';
+      const d = Math.floor(diff / 86400000), h = Math.floor(diff % 86400000 / 3600000), m = Math.floor(diff % 3600000 / 60000);
+      return `Começa em ${d} ${d === 1 ? 'dia' : 'dias'}, ${h} ${h === 1 ? 'hora' : 'horas'} e ${m} ${m === 1 ? 'minuto' : 'minutos'}`;
+    }
+    function countdownHtml(trip, cls) {
+      if (!trip || trip.status !== 'Planejada' || !trip.startDate) return '';
+      const ms = new Date(trip.startDate + 'T00:00:00').getTime();
+      if (Number.isNaN(ms)) return '';
+      return `<span data-countdown="${ms}" class="${cls || ''}"><i class="fa-regular fa-hourglass-half mr-1"></i>${countdownText(ms)}</span>`;
+    }
+    function tickCountdowns() {
+      document.querySelectorAll('[data-countdown]').forEach(el => {
+        const t = countdownText(Number(el.dataset.countdown));
+        const n = el.lastChild; if (n && n.nodeType === 3) n.nodeValue = t; else el.append(t);
+      });
     }
 
     function getAuthToken() {
@@ -2234,7 +2260,7 @@
               normalizeVisitedMaps();
               localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
               loadedFromExternal = true;
-              updateDbSyncBadge('connected', 'GitHub BD Ativo');
+              updateDbSyncBadge('connected', 'Banco de dados em nuvem');
               if (isManualReload && !fromLogin) {
                 showToast('Sincronizado com a nuvem com sucesso!');
               }
@@ -2244,7 +2270,7 @@
               const created = await saveState(true);
               if (created) {
                 loadedFromExternal = true;
-                updateDbSyncBadge('connected', 'GitHub BD Criado');
+                updateDbSyncBadge('connected', 'Banco de dados em nuvem criado');
                 if (isManualReload && !fromLogin) showToast('Banco criado na nuvem com sucesso!');
               }
             }
@@ -2306,7 +2332,7 @@
         return false;
       }
 
-      updateDbSyncBadge('syncing', 'Salvando no GitHub...');
+      updateDbSyncBadge('syncing', 'Salvando na nuvem...');
       try {
         const res = await fetch(API_DB_ENDPOINT, {
           method: 'POST',
@@ -2324,7 +2350,7 @@
         }
 
         if (res.ok) {
-          updateDbSyncBadge('connected', 'GitHub BD Ativo');
+          updateDbSyncBadge('connected', 'Banco de dados em nuvem');
           return true;
         }
       } catch (err) {
@@ -2604,7 +2630,7 @@
       document.getElementById('bannerTripTitle').textContent = trip.title;
       document.getElementById('bannerTripStatus').textContent = trip.status;
       document.getElementById('bannerTripType').textContent = trip.type;
-      document.getElementById('bannerTripDates').innerHTML = `<i class="fa-regular fa-calendar mr-1.5 text-teal-400"></i> ${formatDateBR(trip.startDate)} até ${formatDateBR(trip.endDate)}`;
+      document.getElementById('bannerTripDates').innerHTML = `<i class="fa-regular fa-calendar mr-1.5 text-teal-400"></i> ${formatDateBR(trip.startDate)} até ${formatDateBR(trip.endDate)}${countdownHtml(trip, 'ml-3 font-bold text-amber-300') ? ' ' + countdownHtml(trip, 'ml-3 font-bold text-amber-300') : ''}`;
 
       const imgEl = document.getElementById('bannerTripImage');
       const fallbackImg = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80';
@@ -2771,6 +2797,7 @@
                 <span><i class="fa-regular fa-calendar text-teal-600 mr-1.5"></i> ${formatDateBR(trip.startDate)} - ${formatDateBR(trip.endDate)}</span>
                 <span class="font-bold text-slate-700">${calcTripDays(trip.startDate, trip.endDate)} dias</span>
               </div>
+              ${trip.status === 'Planejada' ? `<div class="text-[11px] font-bold text-teal-700 bg-teal-50 border border-teal-100 rounded-lg px-2.5 py-1.5">${countdownHtml(trip)}</div>` : ''}
 
               <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                 <div>
@@ -2853,7 +2880,12 @@
         return;
       }
 
-      const selectedShared = Array.from(document.querySelectorAll('.trip-share-checkbox:checked')).map(cb => cb.value);
+      let selectedShared = Array.from(document.querySelectorAll('.trip-share-checkbox:checked')).map(cb => cb.value);
+      if (id) { // mantém compartilhamentos já existentes que não aparecem na lista deste usuário
+        const prev = state.trips.find(t => t.id === id);
+        const hidden = ((prev && prev.sharedWith) || []).filter(x => !shareCandidateIds.includes(x) && x !== (prev.ownerId || 'admin'));
+        selectedShared = [...selectedShared, ...hidden];
+      }
 
       if (id) {
         const index = state.trips.findIndex(t => t.id === id);
@@ -4039,7 +4071,7 @@
       passagens:  { label: 'Passagens Aéreas',        icon: 'fa-plane',        chip: 'bg-sky-50 text-sky-600',       layout: 'row',  hint: 'Cartões de embarque, e-tickets e confirmações de voo.' },
       hospedagem: { label: 'Hospedagem',              icon: 'fa-bed',          chip: 'bg-violet-50 text-violet-600', layout: 'grid', hint: 'Endereço, vouchers e fotos do local onde você vai ficar.' },
       recibos:    { label: 'Recibos & Comprovantes',  icon: 'fa-receipt',      chip: 'bg-amber-50 text-amber-600',   layout: 'row',  hint: 'Notas fiscais, comprovantes de pagamento e ingressos.' },
-      passeios:   { label: 'Fotos de Passeios',       icon: 'fa-camera-retro', chip: 'bg-emerald-50 text-emerald-600', layout: 'grid', hint: 'Guarde as melhores fotos de cada passeio.' },
+      passeios:   { label: 'Fotos de Passeios',       icon: 'fa-camera-retro', chip: 'bg-emerald-50 text-emerald-600', layout: 'grid', hint: 'Guarde as melhores fotos de cada passeio. Limite: 10 fotos por viagem.' },
       outros:     { label: 'Outros Documentos',       icon: 'fa-paperclip',    chip: 'bg-slate-100 text-slate-600',  layout: 'row',  hint: 'Seguro viagem, vistos, reservas de carro e o que mais precisar.' }
     };
 
@@ -4662,7 +4694,18 @@
       hydrateFiles(root);
     }
 
+    const PASSEIOS_MAX = 10;
+    function passeiosUsed(trip, exceptId) { return (trip.attachments || []).filter(a => a.category === 'passeios' && a.id !== exceptId).length; }
+    function updateAttLimitInfo() {
+      const trip = getActiveTrip(), el = qid('attLimitInfo');
+      if (!trip || !el) return;
+      const on = qid('attCategory').value === 'passeios';
+      el.classList.toggle('hidden', !on);
+      if (on) { const u = passeiosUsed(trip, qid('attEditId').value); el.textContent = `Limite: ${PASSEIOS_MAX} fotos de passeios por viagem · ${u}/${PASSEIOS_MAX} em uso (restam ${Math.max(0, PASSEIOS_MAX - u)}).`; }
+    }
+
     function refreshAttFields(preset) {
+      updateAttLimitInfo();
       preset = preset || {};
       const trip = getActiveTrip();
       if (!trip) return;
@@ -4715,6 +4758,11 @@
       });
     }
     function addAttPending(files) {
+      const trip0 = getActiveTrip();
+      if (trip0 && qid('attCategory').value === 'passeios') {
+        const room = PASSEIOS_MAX - passeiosUsed(trip0) - attPending.length;
+        if (files.length > room) { showToast(`Limite de ${PASSEIOS_MAX} fotos de passeios por viagem. Só cabem mais ${Math.max(0, room)}.`, 'error'); files = files.slice(0, Math.max(0, room)); }
+      }
       files.forEach(f => {
         if (f.size > ATT_MAX_FILE_MB * 1048576) { showToast(`"${f.name}" passa de ${ATT_MAX_FILE_MB} MB e foi ignorado.`, 'error'); return; }
         attPending.push(f);
@@ -4792,6 +4840,12 @@
         linkId: qid('attLink').value,
         note: qid('attNote').value.trim()
       };
+
+      if (cat === 'passeios') {
+        const adding = editId ? 1 : attPending.length;
+        const cur = editId ? ((trip.attachments.find(x => x.id === editId) || {}).category === 'passeios' ? 0 : 1) : adding;
+        if (passeiosUsed(trip) + cur > PASSEIOS_MAX) { showToast(`Limite de ${PASSEIOS_MAX} fotos de passeios por viagem atingido.`, 'error'); return; }
+      }
 
       if (editId) {
         const a = trip.attachments.find(x => x.id === editId);
@@ -5075,6 +5129,7 @@
     /* -------------------------------------------------------------
      * GERENCIAMENTO DE USUÁRIOS (ADMIN) & COMPARTILHAMENTO
      * ------------------------------------------------------------- */
+    let shareCandidateIds = [];
     function renderTripShareCheckboxes(trip) {
       const container = document.getElementById('tripShareUsersList');
       const section = document.getElementById('tripSharingSection');
@@ -5091,13 +5146,21 @@
       }
 
       // Lista todos os usuários possíveis (admin + usuários criados), exceto o próprio criador da viagem
-      const allCandidates = [
+      let allCandidates = [
         { id: 'admin', name: 'Administrador (Principal)', username: 'admin', active: true },
         ...(state.users || [])
       ].filter(u => u.id !== ownerId);
+      // Usuário comum só vê os nomes que o administrador liberou para ele
+      if (!isCurrentUserAdmin()) {
+        const allowed = Array.isArray(state._shareableUserIds) ? state._shareableUserIds : [];
+        allCandidates = allCandidates.filter(u => allowed.includes(u.id));
+      }
+      shareCandidateIds = allCandidates.map(u => u.id);
 
       if (allCandidates.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400 italic py-1">Nenhuma outra família/usuário cadastrado ainda. O administrador pode criar novos usuários na aba "Usuários".</p>';
+        container.innerHTML = isCurrentUserAdmin()
+          ? '<p class="text-xs text-slate-400 italic py-1">Nenhuma outra família/usuário cadastrado ainda. Crie novos usuários na aba "Usuários".</p>'
+          : '<p class="text-xs text-slate-400 italic py-1">Nenhum usuário disponível para compartilhamento. Peça ao administrador para liberar.</p>';
         return;
       }
 
@@ -5253,6 +5316,7 @@ Senha: ${u.password}`;
       const form = document.getElementById('userForm');
       form.reset();
 
+      renderShareAllowedChecklist(userId);
       const sel = document.getElementById('userAccessPeriodInput');
       const repRow = document.getElementById('userAccessReplaceRow');
       const stat = document.getElementById('userAccessStatusText');
@@ -5286,6 +5350,15 @@ Senha: ${u.password}`;
       modal.classList.remove('hidden');
     }
 
+    function renderShareAllowedChecklist(userId) {
+      const box = document.getElementById('userShareAllowedList');
+      const cur = userId ? ((state.users || []).find(u => u.id === userId) || {}) : {};
+      const allowed = Array.isArray(cur.shareWith) ? cur.shareWith : [];
+      const list = [{ id: 'admin', name: 'Administrador (Principal)', username: 'admin' }, ...(state.users || [])].filter(u => u.id !== userId);
+      box.innerHTML = list.map(u => `<label class="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" value="${escHtml(u.id)}" ${allowed.includes(u.id) ? 'checked' : ''} class="user-share-allowed w-4 h-4 text-teal-600 rounded border-slate-300" /><span>${escHtml(u.name)} <span class="text-slate-400">@${escHtml(u.username)}</span></span></label>`).join('')
+        || '<p class="text-[11px] text-slate-400 italic">Nenhum outro usuário cadastrado.</p>';
+    }
+
     function closeUserModal() {
       document.getElementById('userModal').classList.add('hidden');
     }
@@ -5317,6 +5390,7 @@ Senha: ${u.password}`;
         return;
       }
 
+      const shareWith = Array.from(document.querySelectorAll('.user-share-allowed:checked')).map(c => c.value);
       const periodSel = document.getElementById('userAccessPeriodInput').value;
       const replaceFlag = document.getElementById('userAccessReplaceInput').checked;
       let accessTargetId = editId;
@@ -5329,7 +5403,8 @@ Senha: ${u.password}`;
             name,
             username,
             password,
-            active
+            active,
+            shareWith
           };
           showToast('Usuário e senha atualizados!');
         }
@@ -5340,6 +5415,7 @@ Senha: ${u.password}`;
           username,
           password,
           active,
+          shareWith,
           accessPeriod: periodSel,
           accessExpiresAt: new Date(0).toISOString(), // falha fechada até o servidor definir o prazo
           createdAt: new Date().toISOString()
@@ -5383,7 +5459,7 @@ Senha: ${u.password}`;
       if (!u) return;
 
       showCustomConfirmModal(`Excluir o usuário "${u.name}" (@${u.username})? Ele perderá o acesso ao aplicativo.`, async () => {
-        state.users = (state.users || []).filter(x => x.id !== userId);
+        state.users = (state.users || []).filter(x => x.id !== userId).map(x => Array.isArray(x.shareWith) ? { ...x, shareWith: x.shareWith.filter(id => id !== userId) } : x);
         // Remove compartilhamentos vinculados a este usuário
         (state.trips || []).forEach(t => {
           if (Array.isArray(t.sharedWith)) {
@@ -5405,6 +5481,7 @@ Senha: ${u.password}`;
       await refreshAccessInfo();
       await preloadCovers();
       switchTab('dashboard');
+      setInterval(tickCountdowns, 15000);
     };
   </script>
 </body>
